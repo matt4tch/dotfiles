@@ -1,0 +1,61 @@
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
+*.log
+*.rej
+*.swo
+*.swp
+*.bmml
+*.vi
+*~
+
+# OS or Editor folders
+.DS_Store
+Thumbs.db
+.cache
+.project
+.settings
+.tmproj
+*.esproj
+nbproject
+
+# Dreamweaver Sucks
+_notes
+dwsync.xml
+*.dwt
+Templates
+
+# Adobe
+*.psd
+*.ai
+
+# Komodo
+*.komodoproject
+.komodotools
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Archives
+*.zip
+*.7z
+*.rar
+*.tar.gz
+
+# Folders to ignore
+.hg
+.svn
+.CVS
+intermediate
+publish
+build_*
+.idea
+.sass-cache
+.site-cache
+
+# build script local files
+config.rb
+build/buildinfo.properties
+build/config/buildinfo.properties
