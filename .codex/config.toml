@@ -1,0 +1,12 @@
+model = "gpt-5.4"
+[projects."/Users/matthew4.tch/dev/my-llm"]
+trust_level = "untrusted"
+
+[projects."/Users/matthew4.tch/.config"]
+trust_level = "untrusted"
+
+[projects."/Users/matthew4.tch"]
+trust_level = "trusted"
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
