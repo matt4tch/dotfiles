@@ -59,3 +59,6 @@ build_*
 config.rb
 build/buildinfo.properties
 build/config/buildinfo.properties
+
+# Codex system-managed skills
+.codex/skills/.system/
