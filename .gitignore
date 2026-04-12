@@ -62,3 +62,6 @@ build/config/buildinfo.properties
 
 # Codex system-managed skills
 .codex/skills/.system/
+
+# GitHub CLI auth host data
+gh/hosts.yml
