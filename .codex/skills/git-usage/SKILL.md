@@ -26,6 +26,11 @@ Do not commit or push by default. Only do so when the user explicitly instructs 
 
 - Stage only the files relevant to the requested change.
 - Review `git status --short` before committing.
+- Pay special attention to newly added files (`A` / `??`). If a staged new file represents a broader feature or scaffold than the commit message suggests, split it into a separate commit.
+- Explicitly check for related lock/config/generated files before committing. Common examples: `lazy-lock.json`, `package-lock.json`, `pnpm-lock.yaml`, `Cargo.lock`, `poetry.lock`, generated plugin lockfiles, and dependency snapshot files.
+- If a code or config change caused a lock file to change, stage and commit that lock file in the same commit unless the user explicitly wants it split out.
+- Before finalizing a commit, review `git diff --stat` or path-specific diffs to confirm no relevant lock file was missed.
+- Before committing, compare the staged file set against the proposed commit message. If the message is narrower than the staged scope, either split the commit or broaden the message so the history stays truthful.
 - Avoid broad staging commands when a narrower path-based stage is available.
 - Do not use interactive git flows.
 
@@ -56,5 +61,6 @@ Examples:
 Before reporting completion for a requested commit or push:
 - confirm the target repo
 - summarize the staged/committed scope
+- mention any lock files that were intentionally included or intentionally left out
 - provide the commit hash after committing
 - if pushed, provide the branch and remote used
