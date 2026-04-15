@@ -6,7 +6,13 @@ trust_level = "untrusted"
 trust_level = "untrusted"
 
 [projects."/Users/matthew4.tch"]
-trust_level = "trusted"
+trust_level = "untrusted"
+
+[projects."/Users/matthew4.tch/dev/matvey-bot"]
+trust_level = "untrusted"
+
+[projects."/Users/matthew4.tch/Library/Services"]
+trust_level = "untrusted"
 
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
