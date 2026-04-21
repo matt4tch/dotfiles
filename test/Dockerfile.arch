@@ -1,0 +1,40 @@
+FROM archlinux:latest
+
+# Bash is the default /bin/sh on archlinux:latest; pin it explicitly so the
+# here-string below cannot silently break under a leaner shell.
+SHELL ["/bin/bash", "-c"]
+
+RUN pacman -Syu --noconfirm \
+ && pacman -S --needed --noconfirm sudo git curl ca-certificates \
+ && pacman -Scc --noconfirm <<<$'y\ny\n'
+
+# Locale: Arch needs glibc locale generation to avoid warnings.
+RUN sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+ && locale-gen
+
+ENV LANG=en_US.UTF-8
+
+# Shared tail (identical across distros) --------------------------------------
+
+RUN useradd -m -s /bin/bash dev \
+ && echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
+ && chmod 440 /etc/sudoers.d/dev
+
+USER dev
+WORKDIR /home/dev
+COPY --chown=dev:dev . /home/dev/dotfiles
+WORKDIR /home/dev/dotfiles
+
+# First install + verification.
+RUN bash ./install.sh
+RUN bash ./test/verify.sh
+
+# Simulate gitignored, user-managed files that must survive a reinstall.
+RUN mkdir -p "$HOME/.codex/skills/.system" \
+ && echo "preserved" > "$HOME/.codex/skills/.system/marker.txt" \
+ && mkdir -p "$HOME/.config/gh" \
+ && echo "token=abc" > "$HOME/.config/gh/hosts.yml"
+
+# Second install (idempotency) + post-rerun verification.
+RUN bash ./install.sh
+RUN bash ./test/verify.sh --post-rerun
