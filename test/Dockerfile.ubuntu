@@ -1,0 +1,35 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends sudo git curl ca-certificates locales \
+ && locale-gen en_US.UTF-8 \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
+# Shared tail (identical across distros) --------------------------------------
+
+RUN useradd -m -s /bin/bash dev \
+ && echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
+ && chmod 440 /etc/sudoers.d/dev
+
+USER dev
+WORKDIR /home/dev
+COPY --chown=dev:dev . /home/dev/dotfiles
+WORKDIR /home/dev/dotfiles
+
+# First install + verification.
+RUN bash ./install.sh
+RUN bash ./test/verify.sh
+
+# Simulate gitignored, user-managed files that must survive a reinstall.
+RUN mkdir -p "$HOME/.codex/skills/.system" \
+ && echo "preserved" > "$HOME/.codex/skills/.system/marker.txt" \
+ && mkdir -p "$HOME/.config/gh" \
+ && echo "token=abc" > "$HOME/.config/gh/hosts.yml"
+
+# Second install (idempotency) + post-rerun verification.
+RUN bash ./install.sh
+RUN bash ./test/verify.sh --post-rerun
