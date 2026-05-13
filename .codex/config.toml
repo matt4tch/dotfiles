@@ -1,6 +1,7 @@
-model = "gpt-5.4"
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
 [projects."/Users/matthew4.tch/dev/my-llm"]
-trust_level = "untrusted"
+trust_level = "trusted"
 
 [projects."/Users/matthew4.tch/.config"]
 trust_level = "untrusted"
@@ -14,5 +15,26 @@ trust_level = "untrusted"
 [projects."/Users/matthew4.tch/Library/Services"]
 trust_level = "untrusted"
 
+[projects."/Users/matthew4.tch/uw/cs241/a8"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/uw/cs241"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/dev/wlp4-compiler"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/uw"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/uw/s26"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/dotfiles"]
+trust_level = "trusted"
+
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
