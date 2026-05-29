@@ -2,3 +2,7 @@ font-size = 18
 theme = dracula
 fullscreen = true 
 macos-option-as-alt = left
+window-decoration = auto
+macos-titlebar-style = native
+macos-window-buttons = visible
+macos-non-native-fullscreen = false
