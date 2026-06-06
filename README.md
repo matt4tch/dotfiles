@@ -89,6 +89,9 @@ non-root user, and verifies the resulting filesystem.
 Requires **Docker Desktop running**.
 
 ```bash
+# Run the fast cross-platform symlink regression tests.
+./test/test-symlinks.sh
+
 # Build and test all three distros.
 ./test/run-tests.sh
 
