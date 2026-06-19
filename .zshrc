@@ -15,9 +15,24 @@ PATH="$PATH:$HOME/.rvm/bin"
 
 export PATH
 
+if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+  source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+fi
+
 export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+_load_nvm() {
+  unset -f nvm node npm npx corepack _load_nvm
+  if [ -s "/opt/homebrew/opt/nvm/nvm.sh" ]; then
+    . "/opt/homebrew/opt/nvm/nvm.sh"
+  elif [ -s "$NVM_DIR/nvm.sh" ]; then
+    . "$NVM_DIR/nvm.sh"
+  fi
+}
+nvm() { _load_nvm; nvm "$@"; }
+node() { _load_nvm; node "$@"; }
+npm() { _load_nvm; npm "$@"; }
+npx() { _load_nvm; npx "$@"; }
+corepack() { _load_nvm; corepack "$@"; }
 
 # Fzf config
 if type rg &> /dev/null; then
@@ -60,8 +75,6 @@ zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Enable brew completions
 eval "$(/opt/homebrew/bin/brew shellenv)"
-autoload -Uz compinit
-compinit
 
 # Uncomment the following line to change how often to auto-update (in days).
 # zstyle ':omz:update' frequency 13
@@ -116,15 +129,9 @@ else
   export EDITOR='nvim'
 fi
 
-source ~/powerlevel10k/powerlevel10k.zsh-theme
-
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Navigation aliases
 alias 1='cd -1'
