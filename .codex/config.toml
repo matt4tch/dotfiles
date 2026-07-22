@@ -1,4 +1,4 @@
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "medium"
 [projects."/Users/matthew4.tch/dev/my-llm"]
 trust_level = "trusted"
@@ -36,11 +36,15 @@ trust_level = "trusted"
 [projects."/Users/matthew4.tch/uw/scratch"]
 trust_level = "trusted"
 
+[projects."/Users/matthew4.tch/scratch"]
+trust_level = "trusted"
+
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
 
 [tui.model_availability_nux]
 "gpt-5.5" = 4
+"gpt-5.6-sol" = 4
 
 [features]
 memories = true
