@@ -25,3 +25,15 @@ vim.keymap.set("n", "<leader>yP", function()
   vim.fn.setreg("+", result)
   vim.notify("Yanked absolute path: " .. result)
 end, { desc = "Yank absolute file path with line number" })
+
+local notes_site = "/Users/matthew4.tch/dev/matt4tch.github.io"
+
+local function run_notes_target(target)
+  vim.cmd("botright 12split")
+  vim.cmd("terminal make -C " .. vim.fn.shellescape(notes_site) .. " " .. target)
+  vim.cmd("startinsert")
+end
+
+vim.keymap.set("n", "<leader>mn", function()
+  run_notes_target("publish-notes")
+end, { desc = "Compile and publish course notes" })
