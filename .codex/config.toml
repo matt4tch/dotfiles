@@ -1,53 +1,135 @@
+# Core agent defaults
 model = "gpt-5.6-sol"
 model_reasoning_effort = "medium"
-[projects."/Users/matthew4.tch/dev/my-llm"]
-trust_level = "trusted"
+notify = [
+  "/Users/matthew4.tch/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient",
+  "turn-ended",
+]
 
-[projects."/Users/matthew4.tch/.config"]
-trust_level = "untrusted"
+# Features and migration notices
+[features]
+memories = true
 
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
+
+# Terminal and desktop interface
+[tui]
+vim_mode_default = true
+
+[desktop]
+followUpQueueMode = "queue"
+appearanceTheme = "dark"
+conversationDetailMode = "STEPS_COMMANDS"
+
+# Project trust
+## Untrusted
 [projects."/Users/matthew4.tch"]
 trust_level = "untrusted"
 
-[projects."/Users/matthew4.tch/dev/matvey-bot"]
+[projects."/Users/matthew4.tch/.config"]
 trust_level = "untrusted"
 
 [projects."/Users/matthew4.tch/Library/Services"]
 trust_level = "untrusted"
 
-[projects."/Users/matthew4.tch/uw/cs241/a8"]
+[projects."/Users/matthew4.tch/dev/matvey-bot"]
+trust_level = "untrusted"
+
+## Trusted
+[projects."/Users/matthew4.tch/Documents/Codex/2026-07-26/24-7-calendar-plugin-app-69b03224c5a8819199b40e6b47789f5e"]
 trust_level = "trusted"
 
-[projects."/Users/matthew4.tch/uw/cs241"]
+[projects."/Users/matthew4.tch/Documents/Codex/2026-07-26/give"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/dev/matt4tch.github.io"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/dev/my-llm"]
 trust_level = "trusted"
 
 [projects."/Users/matthew4.tch/dev/wlp4-compiler"]
 trust_level = "trusted"
 
-[projects."/Users/matthew4.tch/uw"]
-trust_level = "trusted"
-
-[projects."/Users/matthew4.tch/uw/s26"]
-trust_level = "trusted"
-
 [projects."/Users/matthew4.tch/dotfiles"]
-trust_level = "trusted"
-
-[projects."/Users/matthew4.tch/uw/scratch"]
 trust_level = "trusted"
 
 [projects."/Users/matthew4.tch/scratch"]
 trust_level = "trusted"
 
-[notice.model_migrations]
-"gpt-5.3-codex" = "gpt-5.4"
+[projects."/Users/matthew4.tch/uw"]
+trust_level = "trusted"
 
-[tui]
-vim_mode_default = true
+[projects."/Users/matthew4.tch/uw/cs241"]
+trust_level = "trusted"
 
-[tui.model_availability_nux]
-"gpt-5.5" = 4
-"gpt-5.6-sol" = 4
+[projects."/Users/matthew4.tch/uw/cs241/a8"]
+trust_level = "trusted"
 
-[features]
-memories = true
+[projects."/Users/matthew4.tch/uw/s26"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/uw/scratch"]
+trust_level = "trusted"
+
+# Bundled marketplace and plugins
+[marketplaces.openai-bundled]
+last_updated = "2026-07-27T14:28:42Z"
+source_type = "local"
+source = "/Users/matthew4.tch/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-07-28T00:13:37Z"
+source_type = "local"
+source = "/Users/matthew4.tch/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."sites@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+# Runtime integrations
+[mcp_servers.node_repl]
+command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+args = []
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.721.41059"
+CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
+CODEX_HOME = "/Users/matthew4.tch/.codex"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/matthew4.tch/.codex"
+
+[shell_environment_policy.set]
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/matthew4.tch/.codex"
