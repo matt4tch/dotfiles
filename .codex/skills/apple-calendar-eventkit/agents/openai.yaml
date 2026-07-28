@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apple Calendar (EventKit)"
+  short_description: "View and safely modify Apple Calendar"
+  default_prompt: "Use $apple-calendar-eventkit to show my Apple Calendar events for tomorrow."
