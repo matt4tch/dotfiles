@@ -52,6 +52,18 @@ class CandidateTests(unittest.TestCase):
     def test_ignores_unindexed_calls(self):
         self.assertEqual(self.scan("$clos(x) + abs(y) + f (z)$"), [])
 
+    def test_ignores_binary_typ_suffixed_files(self):
+        with tempfile.NamedTemporaryFile("wb", suffix=".typ") as file:
+            file.write(b"Vim\x00binary\xff$f_a(x)$")
+            file.flush()
+            self.assertEqual(MODULE.candidates(Path(file.name)), [])
+
+    def test_ignores_editor_state_paths(self):
+        path = Path(
+            "/Users/example/.local/state/nvim/undo/%Users%example%notes.typ"
+        )
+        self.assertTrue(MODULE.is_ignored_path(path))
+
 
 if __name__ == "__main__":
     unittest.main()

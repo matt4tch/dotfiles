@@ -18,6 +18,16 @@ STATE_DIR = HOME / ".codex" / "hook-state" / "typst-indexed-spacing"
 FSWATCH = Path("/opt/homebrew/bin/fswatch")
 WATCH_ROOT = HOME
 PRUNE_PATTERN = r"/(\.git|\.cache|\.local|Library|node_modules|target|venv|\.venv)(/|$)"
+IGNORED_PATH_PARTS = {
+    ".cache",
+    ".git",
+    ".local",
+    ".venv",
+    "Library",
+    "node_modules",
+    "target",
+    "venv",
+}
 BASE_PATTERN = re.compile(r"(?<![#\w])([^\W\d_][^\W_]*)_", re.UNICODE)
 SAFE_SESSION_ID = re.compile(r"^[A-Za-z0-9-]+$")
 
@@ -114,8 +124,27 @@ def balanced_subscript_end(text: str, start: int, mask: bytearray) -> int | None
     return None
 
 
+def is_ignored_path(path: Path) -> bool:
+    return any(part in IGNORED_PATH_PARTS for part in path.parts)
+
+
+def read_typst_source(path: Path) -> str | None:
+    """Return valid Typst source, ignoring editor state and other binary files."""
+    if is_ignored_path(path):
+        return None
+    data = path.read_bytes()
+    if b"\0" in data:
+        return None
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
 def candidates(path: Path) -> list[dict]:
-    text = path.read_text(encoding="utf-8")
+    text = read_typst_source(path)
+    if text is None:
+        return []
     mask = math_mask(text)
     findings: list[dict] = []
 
