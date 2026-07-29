@@ -139,3 +139,14 @@ enabled = false
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/matthew4.tch/.codex"
+
+[hooks.state]
+
+[hooks.state."/Users/matthew4.tch/.codex/hooks.json:session_end:0:0"]
+trusted_hash = "sha256:659e2e32060729c8f48ab807f14d71a865670831f5b77a5c5f51451da8a27416"
+
+[hooks.state."/Users/matthew4.tch/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:d60386b377a9a82a773d2ae99caf97773f640dd668dff7b6d7a9f7204ab962eb"
+
+[hooks.state."/Users/matthew4.tch/.codex/hooks.json:stop:0:0"]
+trusted_hash = "sha256:0e1ba46010a42aefff0e9847b6a40a346a2360eacf634f353b984c8d87a4a639"
