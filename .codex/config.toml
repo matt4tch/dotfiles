@@ -74,6 +74,21 @@ trust_level = "trusted"
 [projects."/Users/matthew4.tch/uw/scratch"]
 trust_level = "trusted"
 
+[projects."/Users/matthew4.tch/Documents/Codex/2026-07-29/is"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/Documents/Codex/2026-07-29/requ"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/dev/drp"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/Documents/Codex/2026-07-29/why"]
+trust_level = "trusted"
+
+[projects."/Users/matthew4.tch/Documents/Codex/2026-07-29/lecture-31"]
+trust_level = "trusted"
+
 [marketplaces.openai-bundled]
 last_updated = "2026-07-28T13:40:00Z"
 source_type = "local"

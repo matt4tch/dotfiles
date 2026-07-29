@@ -202,6 +202,30 @@ def watcher_paths(path: Path) -> tuple[Path, Path]:
     return path.with_suffix(".events"), path.with_suffix(".stderr")
 
 
+def write_state(path: Path, state: dict) -> None:
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(state, sort_keys=True), encoding="utf-8")
+    temporary.replace(path)
+
+
+def pending_event_paths(data: bytes, offset: int) -> tuple[list[Path], int]:
+    """Return complete fswatch records after offset and their commit position."""
+    if not isinstance(offset, int) or offset < 0 or offset > len(data):
+        offset = 0
+    pending = data[offset:]
+    last_separator = pending.rfind(b"\0")
+    if last_separator < 0:
+        return [], offset
+    complete = pending[:last_separator]
+    committed_offset = offset + last_separator + 1
+    paths = [
+        Path(raw.decode("utf-8", errors="surrogateescape"))
+        for raw in complete.split(b"\0")
+        if raw and raw.endswith(b".typ")
+    ]
+    return paths, committed_offset
+
+
 def process_is_watcher(pid: int) -> bool:
     try:
         result = subprocess.run(
@@ -285,10 +309,9 @@ def start(event: dict) -> int:
         "watch_root": str(WATCH_ROOT),
         "events_path": str(events_path),
         "stderr_path": str(stderr_path),
+        "events_offset": 0,
     }
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(state, sort_keys=True), encoding="utf-8")
-    temporary.replace(path)
+    write_state(path, state)
     time.sleep(0.15)
     if watcher.poll() is not None:
         details = stderr_path.read_text(encoding="utf-8", errors="replace").strip()
@@ -300,9 +323,10 @@ def start(event: dict) -> int:
 def stop(event: dict) -> int:
     path = state_path(event)
     if not path.exists():
+        start(event)
         block(
-            "Typst indexed-spacing guard has no session baseline. "
-            "Start a new Codex session so the mandatory guard can run."
+            "Typst indexed-spacing guard restored its missing session baseline. "
+            "Continue once so the mandatory guard can verify subsequent edits."
         )
         return 0
 
@@ -323,14 +347,11 @@ def stop(event: dict) -> int:
 
     time.sleep(0.25)
     events_path, _ = watcher_paths(path)
-    raw_paths = events_path.read_bytes().split(b"\0") if events_path.exists() else []
-    changed = sorted(
-        {
-            Path(raw.decode("utf-8", errors="surrogateescape"))
-            for raw in raw_paths
-            if raw and raw.endswith(b".typ")
-        }
+    event_data = events_path.read_bytes() if events_path.exists() else b""
+    raw_changed, committed_offset = pending_event_paths(
+        event_data, state.get("events_offset", 0)
     )
+    changed = sorted(set(raw_changed))
 
     findings: list[dict] = []
     failures: list[str] = []
@@ -366,7 +387,8 @@ def stop(event: dict) -> int:
         block("\n".join(lines))
         return 0
 
-    cleanup(path, state)
+    state["events_offset"] = committed_offset
+    write_state(path, state)
     return 0
 
 

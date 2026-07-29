@@ -65,5 +65,32 @@ class CandidateTests(unittest.TestCase):
         self.assertTrue(MODULE.is_ignored_path(path))
 
 
+class EventCursorTests(unittest.TestCase):
+    def test_consumes_only_complete_records_after_cursor(self):
+        first = b"/tmp/first.typ\0"
+        data = first + b"/tmp/ignore.txt\0/tmp/second.typ"
+        paths, offset = MODULE.pending_event_paths(data, 0)
+        self.assertEqual(paths, [Path("/tmp/first.typ")])
+        self.assertEqual(offset, len(first) + len(b"/tmp/ignore.txt\0"))
+
+        completed = data + b"\0"
+        paths, next_offset = MODULE.pending_event_paths(completed, offset)
+        self.assertEqual(paths, [Path("/tmp/second.typ")])
+        self.assertEqual(next_offset, len(completed))
+
+    def test_invalid_or_truncated_cursor_restarts_safely(self):
+        data = b"/tmp/file.typ\0"
+        for offset in (-1, len(data) + 1, "bad"):
+            with self.subTest(offset=offset):
+                paths, next_offset = MODULE.pending_event_paths(data, offset)
+                self.assertEqual(paths, [Path("/tmp/file.typ")])
+                self.assertEqual(next_offset, len(data))
+
+    def test_does_not_advance_past_partial_record(self):
+        paths, offset = MODULE.pending_event_paths(b"/tmp/file.typ", 0)
+        self.assertEqual(paths, [])
+        self.assertEqual(offset, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
