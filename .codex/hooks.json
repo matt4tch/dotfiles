@@ -28,7 +28,7 @@
           {
             "type": "command",
             "command": "/usr/bin/python3 /Users/matthew4.tch/.codex/hooks/typst_indexed_spacing.py end",
-            "timeout": 30
+            "timeout": 3
           }
         ]
       }

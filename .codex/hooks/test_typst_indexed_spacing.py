@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+from concurrent.futures import ThreadPoolExecutor
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -90,6 +92,19 @@ class EventCursorTests(unittest.TestCase):
         paths, offset = MODULE.pending_event_paths(b"/tmp/file.typ", 0)
         self.assertEqual(paths, [])
         self.assertEqual(offset, 0)
+
+
+class StateWriteTests(unittest.TestCase):
+    def test_concurrent_writes_use_distinct_temporary_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "session.json"
+            states = [{"events_offset": offset} for offset in range(100)]
+
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                list(executor.map(lambda state: MODULE.write_state(path, state), states))
+
+            self.assertIn(json.loads(path.read_text(encoding="utf-8")), states)
+            self.assertEqual(list(Path(directory).glob("*.tmp")), [])
 
 
 if __name__ == "__main__":
