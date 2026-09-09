@@ -62,14 +62,25 @@ unset fzf_brew_prefix fzf_shell_dir fzf_shell_dirs
 
 # export ZSH_COMPDUMP=$ZSH_CACHE_DIR/.zcompdump-$HOST
 
-# Path to your Oh My Zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+# Prefer the immutable Home Manager packages, with the installer-managed
+# checkout retained as a fallback for supported Linux systems.
+nix_oh_my_zsh="$HOME/.nix-profile/share/oh-my-zsh"
+nix_powerlevel10k="$HOME/.nix-profile/share/zsh-powerlevel10k/powerlevel10k.zsh-theme"
+if [[ -r "$nix_oh_my_zsh/oh-my-zsh.sh" && -r "$nix_powerlevel10k" ]]; then
+  export ZSH="$nix_oh_my_zsh"
+  ZSH_THEME=""
+  omz_update_mode="disabled"
+else
+  export ZSH="$HOME/.oh-my-zsh"
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+  nix_powerlevel10k=""
+  omz_update_mode="reminder"
+fi
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="powerlevel10k/powerlevel10k"
 DEFAULT_USER=$USER
 
 # Set list of themes to pick from when loading at random
@@ -85,10 +96,9 @@ DEFAULT_USER=$USER
 # Case-sensitive completion must be off. _ and - will be interchangeable.
 # HYPHEN_INSENSITIVE="true"
 
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+# Home Manager updates its immutable package; mutable Linux checkouts retain
+# Oh My Zsh's update reminders.
+zstyle ':omz:update' mode "$omz_update_mode"
 
 # Uncomment the following line to change how often to auto-update (in days).
 # zstyle ':omz:update' frequency 13
@@ -134,7 +144,9 @@ DISABLE_LS_COLORS="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git colored-man-pages)
 
-source $ZSH/oh-my-zsh.sh
+source "$ZSH/oh-my-zsh.sh"
+[[ -z "$nix_powerlevel10k" ]] || source "$nix_powerlevel10k"
+unset nix_oh_my_zsh nix_powerlevel10k omz_update_mode
 
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then

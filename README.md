@@ -1,7 +1,8 @@
 # dotfiles — personal shell / editor / tmux configuration
 
-One-command bootstrap for a new macOS or Linux machine: symlinks every
-config into place and installs the tools the configs reference.
+macOS dependencies are declared with Nix, Home Manager, and nix-darwin.
+The shell-based installer remains available for Linux and for linking the
+checked-in configuration files on macOS.
 
 ## What's in here
 
@@ -10,9 +11,10 @@ Home-directory files (symlinked into `$HOME`):
 - `.bash_profile`, `.bashrc`, `.profile`, `.zlogin`, `.zshrc` — shell startup
 - `.gitconfig` — git user + aliases
 - `.p10k.zsh` — Powerlevel10k prompt
-- `.tmux.conf` — tmux config (uses tpm + dracula, sensible, resurrect, continuum, thumbs)
+- `.tmux.conf` — tmux config (Nix-managed Dracula, Sensible, Resurrect, Continuum, and Thumbs)
 - `.vimrc` — minimal vim fallback
 - `.codex/` — Codex CLI config and skills (per-file linked; see Preserved paths)
+- `nix/home-manager/` — pinned macOS system, Home Manager, and signed-cask configuration
 
 XDG config (symlinked under `$HOME/.config/`):
 
@@ -20,35 +22,64 @@ XDG config (symlinked under `$HOME/.config/`):
 - `ghostty/` — Ghostty terminal config
 - `nvim/` — Neovim config (LazyVim-based)
 
-## Install
+## Install on macOS
+
+### Prereqs
+
+- Nix with flakes enabled
+- Homebrew, used only for the six signed/prebuilt casks declared in `darwin.nix`
+- `git`
+
+### First activation
+
+```bash
+git clone git@github.com:matt4tch/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+./install.sh --skip-deps
+cd nix/home-manager
+nix build '.#darwinConfigurations."Matthews-MacBook-Pro".system'
+sudo nix run github:nix-darwin/nix-darwin/master#darwin-rebuild -- \
+  switch --flake .#Matthews-MacBook-Pro
+```
+
+The first system activation installs `darwin-rebuild`. Later rebuilds use the
+pinned input directly:
+
+```bash
+sudo darwin-rebuild switch --flake .#Matthews-MacBook-Pro
+```
+
+The six Homebrew casks are Codex, Discord, Ghostty, ProtonVPN, qutebrowser,
+and Raycast. All formulae, shell tools, runtimes, fonts, and plugins are owned
+by Home Manager. The cask cleanup policy is deliberately non-destructive.
+
+The standalone Home Manager output can be built without administrator access:
+
+```bash
+nix build '.#homeConfigurations."matthew4.tch".activationPackage'
+```
+
+## Install on Linux
 
 ### Prereqs
 
 - `git` and `curl`
-- On Linux: passwordless `sudo` (the installer uses it to install packages)
+- Passwordless `sudo` for dependency installation
 
 ### Run
 
 ```bash
-git clone git@personal-github:matt4tch/dotfiles.git ~/dev/dotfiles
-cd ~/dev/dotfiles
+git clone git@github.com:matt4tch/dotfiles.git ~/dotfiles
+cd ~/dotfiles
 ./install.sh
 ```
 
-### What it does
-
-1. Detects the OS and picks a package manager (Homebrew on macOS; `apt`,
-   `dnf`, or `pacman` on Linux).
-2. Installs missing dependencies: git, curl, zsh, tmux, fzf, ripgrep,
-   neovim, nvm, sesh, Oh My Zsh, Powerlevel10k, tpm, and the tmux plugins
-   referenced by `.tmux.conf`.
-3. Symlinks every dotfile into place. If a real file or a wrong symlink is
-   already at the target, it's moved aside to `<path>.backup-YYYYMMDD-HHMMSS`
-   (one timestamp per run) before the new symlink is created.
+The Linux installer selects `apt`, `dnf`, or `pacman`, installs the tools used
+by the configuration, and safely links each dotfile into place.
 
 ### Supported platforms
 
-- macOS (Apple Silicon or Intel)
+- macOS on Apple Silicon through the Nix flake
 - Ubuntu / Debian
 - Fedora
 - Arch Linux
@@ -104,8 +135,8 @@ idempotency, and writes dummy `~/.codex/skills/.system/` and
 `~/.config/gh/hosts.yml` contents between runs to confirm the second run
 leaves them untouched.
 
-macOS can't be tested inside Docker — verify there by running `./install.sh`
-on a local macOS host.
+macOS can't be tested inside Docker. Validate it by building both flake outputs
+shown above before running `darwin-rebuild switch`.
 
 ## Troubleshooting
 
@@ -116,5 +147,5 @@ on a local macOS host.
 - **`nvim` complains about Lua version** — the Neovim config needs 0.9.5+.
   Ubuntu 24.04 ships a recent-enough nvim; older Ubuntus do not and are not
   supported.
-- **tmux plugins not loading** — open tmux and press `prefix + I` to have
-  tpm install them, or rerun `./install.sh` (which invokes tpm's installer).
+- **tmux plugins not loading on Linux** — open tmux and press `prefix + I` to
+  have tpm install them, or rerun `./install.sh`.

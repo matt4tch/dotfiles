@@ -1,5 +1,31 @@
 { config, pkgs, ... }:
 
+let
+  tmuxRestoreOnLogin = pkgs.writeShellScript "tmux-restore-on-login" ''
+    export PATH="${pkgs.tmux}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+    tmux_bin="${pkgs.tmux}/bin/tmux"
+    restore_script="${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/scripts/restore.sh"
+    bootstrap_session="__tmux_restore__"
+
+    # Preserve a server that is already running (for example, after logging
+    # out and back in without a reboot).
+    if "$tmux_bin" list-sessions >/dev/null 2>&1; then
+      exit 0
+    fi
+
+    "$tmux_bin" new-session -d -s "$bootstrap_session" || exit 1
+
+    if [[ -x "$restore_script" ]]; then
+      # Resurrect discovers the tmux socket through TMUX. run-shell supplies
+      # that context while still waiting synchronously for restoration.
+      "$tmux_bin" run-shell -t "$bootstrap_session:0.0" "$restore_script"
+    fi
+
+    "$tmux_bin" kill-session -t "=$bootstrap_session" 2>/dev/null
+  '';
+in
+
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
@@ -36,6 +62,8 @@
     # formulae. Library-only build dependencies will instead belong to the
     # project dev shells that need them.
     automake
+    autoconf
+    bun
     cargo
     clippy
     coreutils-prefixed
@@ -51,6 +79,7 @@
     opencode
     poppler-utils
     postgresql_16
+    pkg-config
     rustc
     rustfmt
     tree-sitter
@@ -59,12 +88,27 @@
     wget
     yarn
 
-    # Lightweight document authoring tools. Quarto and qutebrowser stay on
-    # their existing installs for now because their Nix closures are a much
-    # larger, separately testable migration batch.
+    # Shell and tmux plugins. The checked-in configuration files source these
+    # from the active profile instead of mutable Git checkouts.
+    oh-my-zsh
+    zsh-powerlevel10k
+    tmuxPlugins.continuum
+    tmuxPlugins.dracula
+    tmuxPlugins.resurrect
+    tmuxPlugins.sensible
+    tmuxPlugins.tmux-thumbs
+
+    # Document authoring tools. qutebrowser stays on Homebrew for now because
+    # its pinned Nix package requires a large local Qt WebEngine build.
     python312
+    quarto
     sioyek
     typst
+
+    # Native macOS fonts and runtimes. Signed GUI applications that cannot be
+    # safely repackaged are declared as casks in darwin.nix instead.
+    nerd-fonts.hack
+    zulu17
 
     # Keep shell highlighting available without a Homebrew-specific source
     # path. Full shell ownership will move to Home Manager in a later phase.
@@ -104,6 +148,20 @@
   #
   home.sessionVariables = {
     # EDITOR = "emacs";
+  };
+
+  # Restore the last tmux-resurrect snapshot at login without relying on the
+  # mutable ~/.local/bin helper or a Homebrew tmux installation.
+  launchd.agents.tmux-restore = {
+    enable = true;
+    config = {
+      Label = "com.matthew.tmux-restore";
+      ProgramArguments = [ "${tmuxRestoreOnLogin}" ];
+      RunAtLoad = true;
+      ProcessType = "Background";
+      StandardOutPath = "${config.home.homeDirectory}/Library/Logs/tmux-restore-on-login.log";
+      StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/tmux-restore-on-login.log";
+    };
   };
 
   # Let Home Manager install and manage itself.

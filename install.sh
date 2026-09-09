@@ -2,9 +2,9 @@
 # install.sh — bootstrap a fresh machine from this dotfiles repo.
 #
 # Symlinks every tracked dotfile into place (with timestamped backups of
-# anything it displaces), and installs the missing dependencies referenced
-# by those configs: Homebrew on macOS, apt/dnf/pacman on Linux, Oh My Zsh,
-# Powerlevel10k, fzf, ripgrep, neovim, tmux, nvm, sesh, tpm + plugins.
+# anything it displaces). On Linux it also installs dependencies through the
+# native package manager. macOS dependencies are managed by the Nix flake, so
+# this script must be run there with --skip-deps.
 #
 # Idempotent: running twice is safe — nothing is re-clobbered.
 #
@@ -27,15 +27,15 @@ usage() {
   cat <<'EOF'
 Usage: install.sh [options]
 
-Bootstrap a fresh machine from this dotfiles repo. Detects the OS, installs
-any missing dependencies, then symlinks every dotfile into $HOME (with
-timestamped backups of anything it would displace). Safe to rerun.
+Bootstrap a fresh machine from this dotfiles repo. On Linux, installs missing
+dependencies and symlinks every dotfile into $HOME. On macOS, use --skip-deps
+to perform only the symlink pass, then apply the nix-darwin flake. Safe to
+rerun.
 
 Options:
   --dry-run         Preview every action. No filesystem changes; every mutation
                     is logged as "DRY-RUN: <command>".
-  --skip-deps       Skip dependency installation. Only run the symlink pass
-                    (and tpm plugin install if applicable).
+  --skip-deps       Skip dependency installation. Only run the symlink pass.
   --skip-links      Skip the symlink pass. Only install / update dependencies.
   --change-shell    On Linux, chsh the current user's login shell to zsh.
                     No-op on macOS (already zsh). Off by default so Docker
@@ -94,6 +94,10 @@ if (( SKIP_LINKS == 1 )); then log "mode:        skipping symlink pass"; fi
 
 # --- Orchestration ---------------------------------------------------------
 detect_os
+
+if (( SKIP_DEPS == 0 )) && [ "$OS_FAMILY" = "macos" ]; then
+  err "macOS dependencies are managed by nix/home-manager; rerun with --skip-deps, then apply the nix-darwin flake"
+fi
 
 if (( SKIP_DEPS == 0 )); then
   check_sudo_linux

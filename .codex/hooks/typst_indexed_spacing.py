@@ -35,7 +35,6 @@ def find_fswatch() -> Path:
 
 FSWATCH = find_fswatch()
 WATCH_ROOT = HOME
-PRUNE_PATTERN = r"/(\.git|\.cache|\.local|Library|node_modules|target|venv|\.venv)(/|$)"
 IGNORED_PATH_PARTS = {
     ".cache",
     ".git",
@@ -335,8 +334,6 @@ def start(event: dict) -> int:
                 "--extended",
                 "--latency",
                 "0.1",
-                "--prune",
-                PRUNE_PATTERN,
                 str(WATCH_ROOT),
             ],
             stdin=subprocess.DEVNULL,
@@ -383,8 +380,11 @@ def stop(event: dict) -> int:
             if stderr_path.exists()
             else ""
         )
+        start(event)
         block(
-            "Typst indexed-spacing filesystem watcher stopped unexpectedly."
+            "Typst indexed-spacing filesystem watcher stopped unexpectedly; "
+            "the guard restored a fresh session baseline. Continue once so it "
+            "can verify subsequent edits."
             + (f"\n{details}" if details else "")
         )
         return 0
