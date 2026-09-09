@@ -1,0 +1,13 @@
+#!/bin/zsh
+
+set -eu
+
+script_dir=${0:A:h}
+helper_app=${CODEX_CALENDAR_HELPER_APP:-"${HOME}/Applications/Codex Calendar Helper.app"}
+helper_binary="${helper_app}/Contents/MacOS/calendar-helper"
+
+if [[ -x "${helper_binary}" ]]; then
+  exec "${helper_binary}" "$@"
+fi
+
+exec swift "${script_dir}/calendar.swift" "$@"

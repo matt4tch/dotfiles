@@ -5,11 +5,19 @@ description: View, search, create, update, and delete events in the user's local
 
 # Apple Calendar with EventKit
 
-Use the bundled `scripts/calendar.swift` command for deterministic EventKit access and JSON output. Run it from the trusted `/Users/matthew4.tch/dotfiles` workspace:
+Use the bundled `scripts/calendar` launcher for deterministic EventKit access and JSON output. It prefers the installed `Codex Calendar Helper.app`, whose stable macOS identity allows EventKit access from persistent tmux sessions, and falls back to interpreting `calendar.swift` when the helper is not installed. Run it from the trusted `/Users/matthew4.tch/dotfiles` workspace:
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift help
+.codex/skills/apple-calendar-eventkit/scripts/calendar help
 ```
+
+Install or refresh the helper only when the user requests setup or maintenance:
+
+```bash
+.codex/skills/apple-calendar-eventkit/scripts/install_helper.sh
+```
+
+The helper is installed at `~/Applications/Codex Calendar Helper.app`. Its first EventKit operation may prompt for Full Calendar Access. Do not remove its permission, reset TCC, or reinstall it merely to retry a failed operation.
 
 ## Workflow
 
@@ -19,20 +27,20 @@ swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift help
 4. For mutations, run a dry run without `--commit`, inspect the JSON, then repeat with `--commit` when it matches the user's request.
 5. Report the resulting calendar, local dates, title, and verification status.
 
-If EventKit fails with Mach error 4099 or `NSXPCConnectionInvalid` inside the sandbox, rerun the same command once with escalated execution. A trusted workspace is necessary for the approval path but does not replace macOS Calendar permission. If escalated EventKit still fails, report the exact error and stop; do not switch to AppleScript or create an ICS file without the user's approval.
+If EventKit fails with Mach error 4099 or `NSXPCConnectionInvalid` inside the sandbox, rerun the same launcher command once with escalated execution. A trusted workspace and the helper's macOS Calendar permission are necessary for the approval path. If escalated EventKit still fails, report the exact error and stop; do not reinstall the helper, switch to AppleScript, or create an ICS file without the user's approval.
 
 ## Read operations
 
 List available calendars:
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift calendars
+.codex/skills/apple-calendar-eventkit/scripts/calendar calendars
 ```
 
 List or search events:
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift events \
+.codex/skills/apple-calendar-eventkit/scripts/calendar events \
   --from 2026-08-01 --to 2026-09-01 \
   --timezone America/Toronto \
   --calendar Home \
@@ -42,7 +50,7 @@ swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift events \
 Fetch one exact event:
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift get \
+.codex/skills/apple-calendar-eventkit/scripts/calendar get \
   --id 'EVENT_IDENTIFIER'
 ```
 
@@ -53,7 +61,7 @@ Prefer ISO 8601 values with offsets. For a local date-time without an offset, al
 Dry run:
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift create \
+.codex/skills/apple-calendar-eventkit/scripts/calendar create \
   --calendar Home \
   --title 'Room in Kraków' \
   --start 2026-08-30T15:00 \
@@ -71,7 +79,7 @@ Use one spanning event for accommodations and other true intervals. For term-sty
 Use an exact identifier obtained from `events` or `get`.
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift update \
+.codex/skills/apple-calendar-eventkit/scripts/calendar update \
   --id 'EVENT_IDENTIFIER' \
   --start 2026-09-02T16:00 \
   --timezone Europe/Zagreb
@@ -80,7 +88,7 @@ swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift update \
 Append `--commit` only after inspecting the dry run. Clear optional values with `--clear-location`, `--clear-notes`, or `--clear-url`.
 
 ```bash
-swift .codex/skills/apple-calendar-eventkit/scripts/calendar.swift delete \
+.codex/skills/apple-calendar-eventkit/scripts/calendar delete \
   --id 'EVENT_IDENTIFIER'
 ```
 

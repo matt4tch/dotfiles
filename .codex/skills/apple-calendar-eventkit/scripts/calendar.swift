@@ -428,6 +428,7 @@ do {
         let title = try requireValue(options, "--title")
         let start = try parseDate(try requireValue(options, "--start"), in: zone)
         let end = try parseDate(try requireValue(options, "--end"), in: zone)
+        let isAllDay = flags.contains("--all-day")
         guard start < end else {
             throw CalendarCLIError(message: "Event end must be later than its start")
         }
@@ -440,9 +441,11 @@ do {
             query: nil,
             limit: 500
         ).filter {
-            ($0.title ?? "") == title
+            let endTolerance = isAllDay ? 1.1 : 1.0
+            return ($0.title ?? "") == title
+                && $0.isAllDay == isAllDay
                 && abs($0.startDate.timeIntervalSince(start)) < 1
-                && abs($0.endDate.timeIntervalSince(end)) < 1
+                && abs($0.endDate.timeIntervalSince(end)) < endTolerance
         }
         if let duplicate = duplicates.first, !flags.contains("--allow-duplicate") {
             emit([
@@ -458,7 +461,7 @@ do {
         event.startDate = start
         event.endDate = end
         event.timeZone = zone
-        event.isAllDay = flags.contains("--all-day")
+        event.isAllDay = isAllDay
         event.location = options["--location"]
         event.notes = options["--notes"]
 
