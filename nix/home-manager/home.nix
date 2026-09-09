@@ -1,6 +1,40 @@
 { config, pkgs, ... }:
 
 let
+  # Sioyek's August 2026 macOS code resolves its bundled read-only data from
+  # Contents/Resources, while the current Nixpkgs derivation installs it under
+  # Contents/MacOS. Ensure every path used by configure_paths() exists in the
+  # bundle location expected at runtime.
+  sioyekWithDarwinResources = pkgs.sioyek.overrideAttrs (oldAttrs: {
+    postInstall = (oldAttrs.postInstall or "") + ''
+      app_contents="$out/Applications/sioyek.app/Contents"
+      mkdir -p "$app_contents/Resources"
+
+      ensure_resource() {
+        resource_name="$1"
+        source_path="$app_contents/MacOS/$resource_name"
+        destination_path="$app_contents/Resources/$resource_name"
+
+        # Prefer an upstream-installed resource when Nixpkgs fixes the bundle.
+        if [[ -e "$destination_path" ]]; then
+          return
+        fi
+
+        if [[ ! -e "$source_path" ]]; then
+          echo "Sioyek resource '$resource_name' is missing from both Contents/Resources and Contents/MacOS" >&2
+          exit 1
+        fi
+
+        cp -R "$source_path" "$destination_path"
+      }
+
+      ensure_resource shaders
+      ensure_resource prefs.config
+      ensure_resource keys.config
+      ensure_resource tutorial.pdf
+    '';
+  });
+
   tmuxRestoreOnLogin = pkgs.writeShellScript "tmux-restore-on-login" ''
     export PATH="${pkgs.tmux}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
@@ -102,7 +136,7 @@ in
     # its pinned Nix package requires a large local Qt WebEngine build.
     python312
     quarto
-    sioyek
+    sioyekWithDarwinResources
     typst
 
     # Native macOS fonts and runtimes. Signed GUI applications that cannot be
