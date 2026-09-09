@@ -2,6 +2,11 @@ local quarto_preview_job = nil
 local quarto_preview_port = 5015
 local quarto_preview_url = "http://127.0.0.1:" .. quarto_preview_port .. "/"
 
+local function executable(name)
+  local path = vim.fn.exepath(name)
+  return path ~= "" and path or name
+end
+
 local function quarto_preview_running()
   return quarto_preview_job and quarto_preview_job:wait(0) == nil
 end
@@ -17,7 +22,7 @@ local function quarto_preview_port_busy()
 end
 
 local function open_quarto_preview()
-  vim.system({ "/opt/homebrew/bin/qutebrowser", quarto_preview_url }, { detach = true })
+  vim.system({ executable("qutebrowser"), quarto_preview_url }, { detach = true })
 end
 
 local function quarto_preview_bg()
@@ -106,8 +111,8 @@ return {
       },
     },
     init = function()
-      vim.env.BROWSER = "/opt/homebrew/bin/qutebrowser"
-      vim.env.QUARTO_PYTHON = "/opt/homebrew/bin/python3"
+      vim.env.BROWSER = executable("qutebrowser")
+      vim.env.QUARTO_PYTHON = executable("python3")
     end,
     keys = {
       { "<leader>ms", quarto_preview_bg, desc = "Quarto: Start HTML preview" },

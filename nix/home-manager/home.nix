@@ -17,25 +17,58 @@
 
   # The home.packages option allows you to install Nix packages into your
   # environment.
-  home.packages = [
-    pkgs.sioyek
+  home.packages = with pkgs; [
+    # Core interactive toolchain. This is the first migration batch from
+    # Homebrew and the imperative installers in lib/deps.sh.
+    fd
+    fswatch
+    fzf
+    gh
+    git
+    neovim
+    nodejs
+    ripgrep
+    sesh
+    tmux
+    zoxide
 
-    # # Adds the 'hello' command to your environment. It prints a friendly
-    # # "Hello, world!" when run.
-    # pkgs.hello
+    # General command-line utilities previously installed as Homebrew
+    # formulae. Library-only build dependencies will instead belong to the
+    # project dev shells that need them.
+    automake
+    cargo
+    clippy
+    coreutils-prefixed
+    duti
+    ffmpeg
+    ghostscript
+    gnupg
+    imagemagick
+    jq
+    lazygit
+    luarocks
+    minisat
+    opencode
+    poppler-utils
+    postgresql_16
+    rustc
+    rustfmt
+    tree-sitter
+    unison
+    watchman
+    wget
+    yarn
 
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+    # Lightweight document authoring tools. Quarto and qutebrowser stay on
+    # their existing installs for now because their Nix closures are a much
+    # larger, separately testable migration batch.
+    python312
+    sioyek
+    typst
 
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
+    # Keep shell highlighting available without a Homebrew-specific source
+    # path. Full shell ownership will move to Home Manager in a later phase.
+    zsh-syntax-highlighting
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage

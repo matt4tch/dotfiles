@@ -4,12 +4,22 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-PATH="/opt/homebrew/bin:$PATH"
+# Keep Homebrew available during the Nix migration, but only as a fallback.
+# Appending these directories lets Home Manager profile binaries win whenever
+# both package managers provide the same command.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  path=("${(@)path:#/opt/homebrew/bin}")
+  path=("${(@)path:#/opt/homebrew/sbin}")
+  path+=(/opt/homebrew/bin /opt/homebrew/sbin)
+elif [[ -x /usr/local/bin/brew ]]; then
+  path=("${(@)path:#/usr/local/bin}")
+  path=("${(@)path:#/usr/local/sbin}")
+  path+=(/usr/local/bin /usr/local/sbin)
+fi
+typeset -gU path PATH
+
 PATH="/usr/local/texlive/2024/bin/universal-darwin:$PATH"
-PATH="/Users/matthew4.tch/.cargo/bin:$PATH"
 PATH="/Applications/Racket v8.13/bin:$PATH"
-PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-PATH="/Users/matthew4.tch/.opencode/bin:$PATH"
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 PATH="$PATH:$HOME/.rvm/bin"
 
@@ -19,20 +29,13 @@ if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 
-export NVM_DIR="$HOME/.nvm"
-_load_nvm() {
-  unset -f nvm node npm npx corepack _load_nvm
-  if [ -s "/opt/homebrew/opt/nvm/nvm.sh" ]; then
-    . "/opt/homebrew/opt/nvm/nvm.sh"
-  elif [ -s "$NVM_DIR/nvm.sh" ]; then
-    . "$NVM_DIR/nvm.sh"
-  fi
-}
-nvm() { _load_nvm; nvm "$@"; }
-node() { _load_nvm; node "$@"; }
-npm() { _load_nvm; npm "$@"; }
-npx() { _load_nvm; npx "$@"; }
-corepack() { _load_nvm; corepack "$@"; }
+# Prefer the active Home Manager generation over inherited system, Homebrew,
+# and language-manager paths. Homebrew remains at the end as a migration
+# fallback for packages that have not moved yet.
+if [[ -d "$HOME/.nix-profile/bin" ]]; then
+  path=("$HOME/.nix-profile/bin" "${(@)path:#$HOME/.nix-profile/bin}")
+fi
+typeset -gU path PATH
 
 # Fzf config
 if type rg &> /dev/null; then
@@ -40,8 +43,22 @@ if type rg &> /dev/null; then
   # FZF_DEFAULT_OPTS='-m'
 fi
 export FZF_DEFAULT_OPTS='-m --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9 --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6 --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4'
-source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
-source /opt/homebrew/opt/fzf/shell/completion.zsh
+fzf_shell_dirs=(
+  "$HOME/.nix-profile/share/fzf" \
+  "${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/profile/share/fzf"
+)
+if (( $+commands[brew] )); then
+  fzf_brew_prefix="$(brew --prefix fzf 2>/dev/null)"
+  [[ -z "$fzf_brew_prefix" ]] || fzf_shell_dirs+=("$fzf_brew_prefix/shell")
+fi
+for fzf_shell_dir in "${fzf_shell_dirs[@]}"; do
+  if [[ -r "$fzf_shell_dir/key-bindings.zsh" ]]; then
+    source "$fzf_shell_dir/key-bindings.zsh"
+    [[ ! -r "$fzf_shell_dir/completion.zsh" ]] || source "$fzf_shell_dir/completion.zsh"
+    break
+  fi
+done
+unset fzf_brew_prefix fzf_shell_dir fzf_shell_dirs
 
 # export ZSH_COMPDUMP=$ZSH_CACHE_DIR/.zcompdump-$HOST
 
@@ -72,9 +89,6 @@ DEFAULT_USER=$USER
 # zstyle ':omz:update' mode disabled  # disable automatic updates
 # zstyle ':omz:update' mode auto      # update automatically without asking
 zstyle ':omz:update' mode reminder  # just remind me to update when it's time
-
-# Enable brew completions
-eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Uncomment the following line to change how often to auto-update (in days).
 # zstyle ':omz:update' frequency 13
@@ -131,7 +145,25 @@ fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+zsh_highlighting_candidates=(
+  "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
+  "${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+)
+if (( $+commands[brew] )); then
+  zsh_highlighting_brew_prefix="$(brew --prefix zsh-syntax-highlighting 2>/dev/null)"
+  if [[ -n "$zsh_highlighting_brew_prefix" ]]; then
+    zsh_highlighting_candidates+=(
+      "$zsh_highlighting_brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+    )
+  fi
+fi
+for zsh_highlighting in "${zsh_highlighting_candidates[@]}"; do
+  if [[ -r "$zsh_highlighting" ]]; then
+    source "$zsh_highlighting"
+    break
+  fi
+done
+unset zsh_highlighting zsh_highlighting_brew_prefix zsh_highlighting_candidates
 
 # Navigation aliases
 alias 1='cd -1'

@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
+import shlex
 import signal
 import subprocess
 import sys
@@ -16,7 +18,22 @@ import time
 
 HOME = Path.home()
 STATE_DIR = HOME / ".codex" / "hook-state" / "typst-indexed-spacing"
-FSWATCH = Path("/opt/homebrew/bin/fswatch")
+
+
+def find_fswatch() -> Path:
+    """Prefer the declarative Home Manager package, then fall back to PATH."""
+    profile_candidates = (
+        HOME / ".nix-profile" / "bin" / "fswatch",
+        HOME / ".local" / "state" / "nix" / "profiles" / "profile" / "bin" / "fswatch",
+    )
+    for candidate in profile_candidates:
+        if candidate.is_file():
+            return candidate.resolve()
+    executable = shutil.which("fswatch")
+    return Path(executable).resolve() if executable else profile_candidates[0]
+
+
+FSWATCH = find_fswatch()
 WATCH_ROOT = HOME
 PRUNE_PATTERN = r"/(\.git|\.cache|\.local|Library|node_modules|target|venv|\.venv)(/|$)"
 IGNORED_PATH_PARTS = {
@@ -251,7 +268,20 @@ def process_is_watcher(pid: int) -> bool:
         )
     except (OSError, subprocess.SubprocessError):
         return False
-    return result.returncode == 0 and str(FSWATCH) in result.stdout
+    if result.returncode != 0:
+        return False
+    try:
+        command = shlex.split(result.stdout.strip())
+    except ValueError:
+        return False
+    if not command:
+        return False
+    return (
+        Path(command[0]).name == "fswatch"
+        and "--print0" in command
+        and "--recursive" in command
+        and str(WATCH_ROOT) in command
+    )
 
 
 def stop_watcher(state: dict) -> None:

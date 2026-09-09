@@ -3,7 +3,7 @@ return {
   ft = "typst",
   version = "1.*",
   opts = {
-    open_cmd = "/opt/homebrew/bin/qutebrowser %s",
+    open_cmd = "qutebrowser %s",
     get_root = function(path_of_main_file)
       local root = os.getenv("TYPST_ROOT")
       if root then
