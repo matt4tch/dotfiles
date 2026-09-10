@@ -5,6 +5,7 @@ notify = [
   "/Users/matthew4.tch/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient",
   "turn-ended",
 ]
+approvals_reviewer = "auto_review"
 
 # Features and migration notices
 [features]

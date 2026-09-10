@@ -18,11 +18,6 @@ elif [[ -x /usr/local/bin/brew ]]; then
 fi
 typeset -gU path PATH
 
-PATH="/usr/local/texlive/2024/bin/universal-darwin:$PATH"
-PATH="/Applications/Racket v8.13/bin:$PATH"
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-PATH="$PATH:$HOME/.rvm/bin"
-
 export PATH
 
 if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then

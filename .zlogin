@@ -1,1 +1,1 @@
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+# Login-shell dependencies are provided by Nix/Home Manager.

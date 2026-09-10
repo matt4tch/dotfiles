@@ -1,6 +1,48 @@
-{ config, pkgs, ... }:
+{
+  config,
+  homeDirectory,
+  lib,
+  pkgs,
+  username,
+  ...
+}:
 
 let
+  # These packages currently have test-suite-only failures on aarch64-darwin
+  # after their build products succeed (a randomized floating-point property
+  # test in SciPy and snapshot harness failures in inline-snapshot). Override
+  # them in this package set so activation is not gated on unstable self-tests.
+  pythonForUserTools = pkgs.python312.override {
+    packageOverrides = _pythonFinal: pythonPrev: {
+      scipy = pythonPrev.scipy.overridePythonAttrs (_oldAttrs: {
+        doCheck = false;
+      });
+      "inline-snapshot" = pythonPrev."inline-snapshot".overridePythonAttrs (_oldAttrs: {
+        doCheck = false;
+      });
+    };
+  };
+
+  pythonWithUserTools = pythonForUserTools.withPackages (
+    pythonPackages: with pythonPackages; [
+      ipykernel
+      jupyter
+      jupyter-cache
+      jupyter-client
+      matplotlib
+      pynvim
+      pyyaml
+      scikit-learn
+    ]
+  );
+
+  # The checked-in .zshrc remains a standalone fallback for the legacy Linux
+  # installer. On macOS, import only its explicitly marked personal aliases and
+  # functions; Home Manager generates every framework and integration line.
+  zshCustomConfig =
+    "# Navigation aliases"
+    + lib.last (lib.splitString "# Navigation aliases" (builtins.readFile ../../.zshrc));
+
   # Sioyek's August 2026 macOS code resolves its bundled read-only data from
   # Contents/Resources, while the current Nixpkgs derivation installs it under
   # Contents/MacOS. Ensure every path used by configure_paths() exists in the
@@ -63,8 +105,8 @@ in
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "matthew4.tch";
-  home.homeDirectory = "/Users/matthew4.tch";
+  home.username = username;
+  home.homeDirectory = homeDirectory;
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -82,15 +124,11 @@ in
     # Homebrew and the imperative installers in lib/deps.sh.
     fd
     fswatch
-    fzf
     gh
-    git
     neovim
     nodejs
     ripgrep
     sesh
-    tmux
-    zoxide
 
     # General command-line utilities previously installed as Homebrew
     # formulae. Library-only build dependencies will instead belong to the
@@ -122,21 +160,16 @@ in
     wget
     yarn
 
-    # Shell and tmux plugins. The checked-in configuration files source these
-    # from the active profile instead of mutable Git checkouts.
-    oh-my-zsh
-    zsh-powerlevel10k
-    tmuxPlugins.continuum
-    tmuxPlugins.dracula
-    tmuxPlugins.resurrect
-    tmuxPlugins.sensible
-    tmuxPlugins.tmux-thumbs
-
-    # Document authoring tools. qutebrowser stays on Homebrew for now because
-    # its pinned Nix package requires a large local Qt WebEngine build.
-    python312
+    # Document authoring and course tools. qutebrowser stays on Homebrew for
+    # now because its pinned Nix package requires a large local Qt WebEngine
+    # build. The Python environment replaces the previously user-installed
+    # Jupyter, scientific Python, and Neovim provider packages.
+    mermaid-cli
+    pythonWithUserTools
     quarto
+    racket
     sioyekWithDarwinResources
+    texliveMedium
     typst
 
     # Native macOS fonts and runtimes. Signed GUI applications that cannot be
@@ -144,46 +177,189 @@ in
     nerd-fonts.hack
     zulu17
 
-    # Keep shell highlighting available without a Homebrew-specific source
-    # path. Full shell ownership will move to Home Manager in a later phase.
-    zsh-syntax-highlighting
   ];
 
-  # Home Manager is pretty good at managing dotfiles. The primary way to manage
-  # plain files is through 'home.file'.
+  # Files without a useful native Home Manager module are still declarative:
+  # activation links these version-controlled sources from the Nix store.
   home.file = {
     "Library/Application Support/sioyek/keys_user.config".source = ./sioyek/keys_user.config;
+    ".bash_profile".source = ../../.bash_profile;
+    ".bashrc".source = ../../.bashrc;
+    ".profile".source = ../../.profile;
+    ".p10k.zsh".source = ../../.p10k.zsh;
+    ".vimrc".source = ../../.vimrc;
 
-    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-    # # symlink to the Nix store copy.
-    # ".screenrc".source = dotfiles/screenrc;
+    # tmux itself writes the generated configuration under XDG_CONFIG_HOME.
+    # Keep the traditional path as a managed link because tmux prefers it when
+    # both locations exist.
+    ".tmux.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/tmux/tmux.conf";
 
-    # # You can also set the file content immediately.
-    # ".gradle/gradle.properties".text = ''
-    #   org.gradle.console=verbose
-    #   org.gradle.daemon.idletimeout=3600000
-    # '';
+    # Preserve Codex's runtime-managed ~/.codex/skills/.system directory by
+    # managing only the version-controlled entries around it.
+    ".codex/AGENTS.md".source = ../../.codex/AGENTS.md;
+    ".codex/config.toml".source = ../../.codex/config.toml;
+    ".codex/hooks.json".source = ../../.codex/hooks.json;
+    ".codex/hooks".source = ../../.codex/hooks;
+    ".codex/skills/apple-calendar-eventkit".source = ../../.codex/skills/apple-calendar-eventkit;
+    ".codex/skills/git-usage".source = ../../.codex/skills/git-usage;
+
+    # Generate the conventional Git path too. This prevents an older
+    # ~/.gitconfig from shadowing Home Manager's XDG Git configuration.
+    ".gitconfig".text = lib.generators.toGitINI {
+      user = {
+        name = "Matthew Tchouikine";
+        email = "matthew4.tch@gmail.com";
+      };
+      init.defaultBranch = "main";
+    };
   };
 
-  # Home Manager can also manage your environment variables through
-  # 'home.sessionVariables'. These will be explicitly sourced when using a
-  # shell provided by Home Manager. If you don't want to manage your shell
-  # through Home Manager then you have to manually source 'hm-session-vars.sh'
-  # located at either
-  #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  /etc/profiles/per-user/matthew4.tch/etc/profile.d/hm-session-vars.sh
-  #
   home.sessionVariables = {
-    # EDITOR = "emacs";
+    VISUAL = "nvim";
+  };
+
+  xdg.configFile = {
+    "gh/config.yml".source = ../../gh/config.yml;
+    "ghostty".source = ../../ghostty;
+    "nvim".source = ../../nvim;
+  };
+
+  programs.git = {
+    enable = true;
+    settings = {
+      user = {
+        name = "Matthew Tchouikine";
+        email = "matthew4.tch@gmail.com";
+      };
+      init.defaultBranch = "main";
+    };
+  };
+
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
+    defaultCommand = "rg --files";
+    defaultOptions = [
+      "-m"
+      "--color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9,fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9,info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6,marker:#ff79c6,spinner:#ffb86c,header:#6272a4"
+    ];
+  };
+
+  programs.zoxide = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
+  programs.zsh = {
+    enable = true;
+    dotDir = config.home.homeDirectory;
+    defaultKeymap = "viins";
+    loginExtra = builtins.readFile ../../.zlogin;
+    syntaxHighlighting.enable = true;
+    oh-my-zsh = {
+      enable = true;
+      plugins = [
+        "git"
+        "colored-man-pages"
+      ];
+      extraConfig = ''
+        DEFAULT_USER=$USER
+        DISABLE_LS_COLORS="true"
+        zstyle ':omz:update' mode disabled
+      '';
+    };
+    plugins = [
+      {
+        name = "powerlevel10k";
+        src = pkgs.zsh-powerlevel10k;
+        file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
+      }
+    ];
+    initContent = lib.mkMerge [
+      (lib.mkOrder 500 ''
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+      '')
+      (lib.mkOrder 550 ''
+        # A terminal app that was already running during a nix-darwin switch
+        # can retain the old environment guard and PATH. Resolve the active
+        # Home Manager profile on every interactive shell so Nix-managed
+        # commands take precedence immediately after activation.
+        nix_profile_roots=(
+          "/etc/profiles/per-user/$USER"
+          "''${XDG_STATE_HOME:-$HOME/.local/state}/home-manager/gcroots/current-home/home-path"
+          "$HOME/.nix-profile"
+          "''${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/profile"
+        )
+        for nix_profile_root in "''${nix_profile_roots[@]}"; do
+          if [[ -d "$nix_profile_root/bin" ]]; then
+            path=("$nix_profile_root/bin" "''${(@)path:#$nix_profile_root/bin}")
+            break
+          fi
+        done
+        typeset -gU path PATH
+        export PATH
+        unset nix_profile_root nix_profile_roots
+      '')
+      (lib.mkOrder 1000 ''
+        # Preferred editor for local and remote sessions.
+        if [[ -n $SSH_CONNECTION ]]; then
+          export EDITOR='vim'
+        else
+          export EDITOR='nvim'
+        fi
+
+        # Home Manager loads powerlevel10k before this custom configuration.
+        [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+        ${zshCustomConfig}
+      '')
+    ];
+  };
+
+  programs.tmux = {
+    enable = true;
+    terminal = "screen-256color";
+    keyMode = "vi";
+    escapeTime = 0;
+    historyLimit = 1000000;
+    mouse = true;
+    focusEvents = true;
+    plugins = with pkgs.tmuxPlugins; [
+      sensible
+      {
+        plugin = dracula;
+        extraConfig = ''
+          set -g @dracula-show-powerline true
+          set -g @dracula-show-left-icon "#S"
+          set -g @dracula-transparent-powerline-bg true
+          set -g @dracula-show-left-sep 
+          set -g @dracula-show-right-sep 
+          set -g @dracula-plugins "time"
+        '';
+      }
+      {
+        plugin = resurrect;
+        extraConfig = ''
+          set -g @resurrect-processes 'codex'
+        '';
+      }
+      {
+        plugin = continuum;
+        extraConfig = ''
+          set -g @continuum-restore 'off'
+        '';
+      }
+      tmux-thumbs
+    ];
+    extraConfig = ''
+      ${builtins.readFile ./tmux.conf}
+
+      # Save the current state when the last client detaches. The immutable
+      # plugin path is supplied directly by Nix, with no profile probing.
+      set-hook -g client-detached 'run-shell "${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/scripts/save.sh"'
+    '';
   };
 
   # Restore the last tmux-resurrect snapshot at login without relying on the

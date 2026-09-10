@@ -22,36 +22,43 @@
       ...
     }:
     let
-      system = "aarch64-darwin";
+      host = {
+        name = "Matthews-MacBook-Pro";
+        system = "aarch64-darwin";
+        username = "matthew4.tch";
+        homeDirectory = "/Users/matthew4.tch";
+      };
+      inherit (host) homeDirectory system username;
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
       };
     in
     {
-      darwinConfigurations."Matthews-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+      darwinConfigurations.${host.name} = nix-darwin.lib.darwinSystem {
+        specialArgs = { inherit homeDirectory system username; };
         modules = [
-          ./darwin.nix
+          ./nix/home-manager/darwin.nix
           home-manager.darwinModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.users."matthew4.tch" = import ./home.nix;
+            home-manager.backupFileExtension = "before-home-manager";
+            home-manager.extraSpecialArgs = { inherit homeDirectory username; };
+            home-manager.users.${username} = import ./nix/home-manager/home.nix;
           }
         ];
       };
 
       # Keep a standalone Home Manager output for building and testing user
       # configuration without requiring administrator privileges.
-      homeConfigurations."matthew4.tch" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations.${username} = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
 
         # Specify your home configuration modules here, for example,
         # the path to your home.nix.
-        modules = [ ./home.nix ];
-
-        # Optionally use extraSpecialArgs
-        # to pass through arguments to home.nix
+        modules = [ ./nix/home-manager/home.nix ];
+        extraSpecialArgs = { inherit homeDirectory username; };
       };
     };
 }
