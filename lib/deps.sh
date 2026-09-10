@@ -3,35 +3,10 @@
 # Per-dependency install functions. Every function is idempotent: it detects
 # whether the dep is already present and returns 0 early if so.
 
-# --- Homebrew (macOS) ------------------------------------------------------
-install_brew() {
-  [ "$OS_FAMILY" = "macos" ] || return 0
-  if has_cmd brew; then
-    log "brew: already installed"
-    return 0
-  fi
-  log "installing Homebrew"
-  run_sh '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-  # Make brew visible for the rest of this script (both Apple Silicon and
-  # Intel layouts).
-  if (( DRY_RUN == 0 )); then
-    if [ -x /opt/homebrew/bin/brew ]; then
-      eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [ -x /usr/local/bin/brew ]; then
-      eval "$(/usr/local/bin/brew shellenv)"
-    fi
-  fi
-}
-
 # --- Base OS packages + toolchain -----------------------------------------
 install_pkg_prereqs() {
   log "installing package prerequisites"
   case "$OS_FAMILY" in
-    macos)
-      install_brew
-      pkg_install git zsh tmux
-      # git & curl ship with Xcode CLT on macOS; assume present. No apt.
-      ;;
     ubuntu|debian)
       pkg_refresh
       pkg_install git curl zsh tmux unzip ca-certificates build-essential
@@ -85,17 +60,6 @@ install_fzf() {
   else
     pkg_install fzf
   fi
-  # On macOS, run brew's key-bindings installer once (non-interactive, no rc
-  # rewrites). Skip if brew isn't available (e.g. dry-run before brew install).
-  if [ "$OS_FAMILY" = "macos" ] && has_cmd brew; then
-    local prefix
-    prefix="$(brew --prefix 2>/dev/null || printf '')"
-    if [ -n "$prefix" ] && [ -x "$prefix/opt/fzf/install" ]; then
-      # --all: install key bindings + completion; --no-update-rc: don't touch
-      # our .zshrc (we already wire it up via the repo).
-      run_cmd "$prefix/opt/fzf/install" --all --no-update-rc
-    fi
-  fi
 }
 
 install_ripgrep() {
@@ -123,16 +87,12 @@ install_tmux() {
 }
 
 # --- nvm -------------------------------------------------------------------
-# Detection covers: brew-installed (macOS), git-cloned to ~/.nvm (Linux
-# convention), and the user's existing export of $NVM_DIR.
+# Detection covers the Linux ~/.nvm convention and an existing NVM_DIR.
 _nvm_present() {
   if [ -n "${NVM_DIR:-}" ] && [ -s "$NVM_DIR/nvm.sh" ]; then
     return 0
   fi
   if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    return 0
-  fi
-  if [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] || [ -s "/usr/local/opt/nvm/nvm.sh" ]; then
     return 0
   fi
   return 1
@@ -143,19 +103,10 @@ install_nvm() {
     log "nvm: already installed"
     return 0
   fi
-  case "$OS_FAMILY" in
-    macos)
-      pkg_install nvm
-      # Homebrew's nvm requires the user to create their own $NVM_DIR.
-      ensure_dir "$HOME/.nvm"
-      ;;
-    ubuntu|debian|fedora|arch)
-      log "installing nvm via upstream install.sh (PROFILE=/dev/null so it doesn't edit our rc)"
-      # PROFILE=/dev/null prevents nvm's installer from appending source lines
-      # to ~/.zshrc/~/.bashrc — those are owned by this repo.
-      run_sh 'curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash'
-      ;;
-  esac
+  log "installing nvm via upstream install.sh (PROFILE=/dev/null so it doesn't edit our rc)"
+  # PROFILE=/dev/null prevents nvm's installer from appending source lines to
+  # ~/.zshrc/~/.bashrc — those are owned by this repo.
+  run_sh 'curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash'
 }
 
 # --- sesh (tmux session switcher) -----------------------------------------
@@ -216,24 +167,17 @@ install_sesh() {
     log "sesh: already installed"
     return 0
   fi
-  case "$OS_FAMILY" in
-    macos)
-      pkg_install sesh
-      ;;
-    ubuntu|debian|fedora|arch)
-      if _sesh_download_release; then
-        log "sesh: installed to ~/.local/bin/sesh"
-      elif has_cmd go; then
-        log "sesh: release download failed; falling back to 'go install'"
-        run_cmd go install github.com/joshmedeski/sesh/v2@latest
-      else
-        err "sesh: release tarball failed and 'go' is not installed"
-      fi
-      if ! path_in "$HOME/.local/bin" "$PATH"; then
-        warn "\$HOME/.local/bin is not on \$PATH; add it to your shell rc to pick up sesh"
-      fi
-      ;;
-  esac
+  if _sesh_download_release; then
+    log "sesh: installed to ~/.local/bin/sesh"
+  elif has_cmd go; then
+    log "sesh: release download failed; falling back to 'go install'"
+    run_cmd go install github.com/joshmedeski/sesh/v2@latest
+  else
+    err "sesh: release tarball failed and 'go' is not installed"
+  fi
+  if ! path_in "$HOME/.local/bin" "$PATH"; then
+    warn "\$HOME/.local/bin is not on \$PATH; add it to your shell rc to pick up sesh"
+  fi
 }
 
 # --- tmux plugin manager + plugins ----------------------------------------
@@ -271,12 +215,8 @@ install_tools() {
   install_nvm
 }
 
-# --- Optional: change login shell to zsh on Linux -------------------------
+# --- Optional: change login shell to zsh ----------------------------------
 change_shell_to_zsh() {
-  if [ "$OS_FAMILY" = "macos" ]; then
-    log "change-shell: macOS login shell is already zsh; skipping"
-    return 0
-  fi
   if ! has_cmd zsh; then
     warn "change-shell: zsh not installed; skipping"
     return 0

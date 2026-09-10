@@ -25,6 +25,16 @@
     ];
   };
 
+  # Pin and install Homebrew itself through Nix. nix-darwin's homebrew module
+  # below owns the package inventory; nix-homebrew owns the installation used
+  # to realize that inventory and can adopt an existing /opt/homebrew tree.
+  nix-homebrew = {
+    enable = true;
+    user = username;
+    autoMigrate = true;
+    mutableTaps = false;
+  };
+
   # Preserve the explicit, user-visible preferences on this Mac. Settings that
   # were absent from the defaults database remain unmanaged so macOS can retain
   # its platform defaults.
@@ -81,8 +91,8 @@
     };
   };
 
-  # These signed application bundles remain Homebrew casks, but their desired
-  # state is owned by this Nix configuration. Cleanup stays non-destructive:
+  # These signed application bundles remain Homebrew casks, but Homebrew itself
+  # and their desired state are owned by this Nix configuration. Cleanup stays non-destructive:
   # Homebrew 6 also reports removable caches during `brew bundle cleanup`,
   # which makes nix-darwin's check mode reject an otherwise matching package
   # inventory.

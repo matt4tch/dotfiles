@@ -29,7 +29,6 @@ XDG configuration managed by Home Manager under `$HOME/.config/`:
 ### Prereqs
 
 - Nix with flakes enabled
-- Homebrew, used only for the six signed/prebuilt casks declared in `darwin.nix`
 - `git`
 
 ### First activation
@@ -39,9 +38,13 @@ git clone git@github.com:matt4tch/dotfiles.git ~/dotfiles
 ~/dotfiles/bootstrap-macos.sh
 ```
 
-The bootstrap builds the pinned system, preserves pre-existing `/etc/bashrc`
-and `/etc/zshenv` files after confirmation, and performs the first system
-activation. Home Manager then creates every declared configuration link.
+The bootstrap builds the pinned system, installs or adopts the pinned Homebrew
+installation used for the six signed casks, preserves pre-existing
+`/etc/bashrc` and `/etc/zshenv` files after confirmation, and performs the
+first system activation. Home Manager then creates every declared
+configuration link. When adopting an existing untapped Homebrew installation,
+the bootstrap safely replaces its empty taps directory; it refuses to remove
+any locally added taps.
 Later rebuilds can be run from the repository root with:
 
 ```bash
@@ -49,8 +52,9 @@ sudo darwin-rebuild switch --flake '.#Matthews-MacBook-Pro'
 ```
 
 The six Homebrew casks are Codex, Discord, Ghostty, ProtonVPN, qutebrowser,
-and Raycast. All formulae, shell tools, runtimes, fonts, and plugins are owned
-by Home Manager. The cask cleanup policy is deliberately non-destructive.
+and Raycast. The Homebrew installation is pinned by `nix-homebrew`; all
+formulae, shell tools, runtimes, fonts, and plugins are owned by Home Manager.
+The cask cleanup policy is deliberately non-destructive.
 Explicit Dock, Finder, keyboard, trackpad, clock, screenshot, and window
 management preferences are declared in `nix/home-manager/darwin.nix`. Host
 identity and architecture are centralized in the root `flake.nix`; portable

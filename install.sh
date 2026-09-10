@@ -2,9 +2,9 @@
 # install.sh — bootstrap a fresh machine from this dotfiles repo.
 #
 # Symlinks every tracked dotfile into place (with timestamped backups of
-# anything it displaces). On Linux it also installs dependencies through the
-# native package manager. macOS dependencies are managed by the Nix flake, so
-# this script must be run there with --skip-deps.
+# anything it displaces) and installs Linux dependencies through the native
+# package manager. macOS is owned entirely by bootstrap-macos.sh and the Nix
+# flake.
 #
 # Idempotent: running twice is safe — nothing is re-clobbered.
 #
@@ -27,19 +27,17 @@ usage() {
   cat <<'EOF'
 Usage: install.sh [options]
 
-Bootstrap a fresh machine from this dotfiles repo. On Linux, installs missing
-dependencies and symlinks every dotfile into $HOME. On macOS, use --skip-deps
-to perform only the symlink pass, then apply the nix-darwin flake. Safe to
-rerun.
+Bootstrap a fresh Linux machine from this dotfiles repo by installing missing
+dependencies and symlinking every dotfile into $HOME. On macOS, run
+./bootstrap-macos.sh instead. Safe to rerun on supported Linux systems.
 
 Options:
   --dry-run         Preview every action. No filesystem changes; every mutation
                     is logged as "DRY-RUN: <command>".
   --skip-deps       Skip dependency installation. Only run the symlink pass.
   --skip-links      Skip the symlink pass. Only install / update dependencies.
-  --change-shell    On Linux, chsh the current user's login shell to zsh.
-                    No-op on macOS (already zsh). Off by default so Docker
-                    tests don't block on it.
+  --change-shell    Change the login shell to zsh via chsh. Off by default so
+                    Docker tests don't block on it.
   -h, --help        Print this help and exit.
 
 Environment:
@@ -95,8 +93,8 @@ if (( SKIP_LINKS == 1 )); then log "mode:        skipping symlink pass"; fi
 # --- Orchestration ---------------------------------------------------------
 detect_os
 
-if (( SKIP_DEPS == 0 )) && [ "$OS_FAMILY" = "macos" ]; then
-  err "macOS dependencies are managed by nix/home-manager; rerun with --skip-deps, then apply the nix-darwin flake"
+if [ "$OS_FAMILY" = "macos" ]; then
+  err "macOS is managed by Nix; run $SCRIPT_DIR/bootstrap-macos.sh"
 fi
 
 if (( SKIP_DEPS == 0 )); then

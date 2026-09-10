@@ -45,11 +45,8 @@ detect_os() {
   log "detected OS family: $OS_FAMILY"
 }
 
-# On Linux, verify passwordless sudo is usable. Called before any apt/dnf/pacman.
+# Verify passwordless sudo is usable before any apt/dnf/pacman command.
 check_sudo_linux() {
-  if [ "$OS_FAMILY" = "macos" ]; then
-    return 0
-  fi
   if ! has_cmd sudo; then
     err "sudo not found. This script needs sudo on Linux."
   fi
@@ -58,11 +55,9 @@ check_sudo_linux() {
   fi
 }
 
-# Refresh the package index (no-op on macos).
+# Refresh the package index.
 pkg_refresh() {
   case "$OS_FAMILY" in
-    macos)
-      : ;;
     ubuntu|debian)
       run_cmd sudo apt-get update
       ;;
@@ -89,9 +84,6 @@ pkg_refresh() {
 pkg_install() {
   (( $# > 0 )) || return 0
   case "$OS_FAMILY" in
-    macos)
-      run_cmd brew install "$@"
-      ;;
     ubuntu|debian)
       run_cmd sudo apt-get install -y "$@"
       ;;
