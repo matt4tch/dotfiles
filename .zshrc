@@ -30,11 +30,20 @@ if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
 fi
 
 # Prefer the active Home Manager generation over inherited system, Homebrew,
-# and language-manager paths. Homebrew remains at the end as a migration
-# fallback for packages that have not moved yet.
-if [[ -d "$HOME/.nix-profile/bin" ]]; then
-  path=("$HOME/.nix-profile/bin" "${(@)path:#$HOME/.nix-profile/bin}")
-fi
+# and language-manager paths. nix-darwin exposes it through /etc/profiles;
+# standalone Home Manager uses one of the per-user profile paths below.
+nix_profile_roots=(
+  "${XDG_STATE_HOME:-$HOME/.local/state}/home-manager/gcroots/current-home/home-path"
+  "/etc/profiles/per-user/$USER"
+  "$HOME/.nix-profile"
+  "${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/profile"
+)
+for nix_profile_root in "${nix_profile_roots[@]}"; do
+  if [[ -d "$nix_profile_root/bin" ]]; then
+    path=("$nix_profile_root/bin" "${(@)path:#$nix_profile_root/bin}")
+    break
+  fi
+done
 typeset -gU path PATH
 
 # Fzf config
@@ -43,10 +52,10 @@ if type rg &> /dev/null; then
   # FZF_DEFAULT_OPTS='-m'
 fi
 export FZF_DEFAULT_OPTS='-m --color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9 --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6 --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4'
-fzf_shell_dirs=(
-  "$HOME/.nix-profile/share/fzf" \
-  "${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/profile/share/fzf"
-)
+fzf_shell_dirs=()
+for nix_profile_root in "${nix_profile_roots[@]}"; do
+  fzf_shell_dirs+=("$nix_profile_root/share/fzf")
+done
 if (( $+commands[brew] )); then
   fzf_brew_prefix="$(brew --prefix fzf 2>/dev/null)"
   [[ -z "$fzf_brew_prefix" ]] || fzf_shell_dirs+=("$fzf_brew_prefix/shell")
@@ -64,9 +73,19 @@ unset fzf_brew_prefix fzf_shell_dir fzf_shell_dirs
 
 # Prefer the immutable Home Manager packages, with the installer-managed
 # checkout retained as a fallback for supported Linux systems.
-nix_oh_my_zsh="$HOME/.nix-profile/share/oh-my-zsh"
-nix_powerlevel10k="$HOME/.nix-profile/share/zsh-powerlevel10k/powerlevel10k.zsh-theme"
-if [[ -r "$nix_oh_my_zsh/oh-my-zsh.sh" && -r "$nix_powerlevel10k" ]]; then
+nix_oh_my_zsh=""
+nix_powerlevel10k=""
+for nix_profile_root in "${nix_profile_roots[@]}"; do
+  candidate_oh_my_zsh="$nix_profile_root/share/oh-my-zsh"
+  candidate_powerlevel10k="$nix_profile_root/share/zsh-powerlevel10k/powerlevel10k.zsh-theme"
+  if [[ -r "$candidate_oh_my_zsh/oh-my-zsh.sh" && -r "$candidate_powerlevel10k" ]]; then
+    nix_oh_my_zsh="$candidate_oh_my_zsh"
+    nix_powerlevel10k="$candidate_powerlevel10k"
+    break
+  fi
+done
+unset candidate_oh_my_zsh candidate_powerlevel10k
+if [[ -n "$nix_oh_my_zsh" ]]; then
   export ZSH="$nix_oh_my_zsh"
   ZSH_THEME=""
   omz_update_mode="disabled"
@@ -157,10 +176,12 @@ fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-zsh_highlighting_candidates=(
-  "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
-  "${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-)
+zsh_highlighting_candidates=()
+for nix_profile_root in "${nix_profile_roots[@]}"; do
+  zsh_highlighting_candidates+=(
+    "$nix_profile_root/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  )
+done
 if (( $+commands[brew] )); then
   zsh_highlighting_brew_prefix="$(brew --prefix zsh-syntax-highlighting 2>/dev/null)"
   if [[ -n "$zsh_highlighting_brew_prefix" ]]; then
@@ -176,6 +197,7 @@ for zsh_highlighting in "${zsh_highlighting_candidates[@]}"; do
   fi
 done
 unset zsh_highlighting zsh_highlighting_brew_prefix zsh_highlighting_candidates
+unset nix_profile_root nix_profile_roots
 
 # Navigation aliases
 alias 1='cd -1'
