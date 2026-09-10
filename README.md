@@ -30,6 +30,7 @@ XDG configuration managed by Home Manager under `$HOME/.config/`:
 
 - Nix with flakes enabled
 - `git`
+- Signed into the Mac App Store with the Apple ID that owns the declared apps
 
 ### First activation
 
@@ -39,7 +40,7 @@ git clone git@github.com:matt4tch/dotfiles.git ~/dotfiles
 ```
 
 The bootstrap builds the pinned system, installs or adopts the pinned Homebrew
-installation used for the six signed casks, preserves pre-existing
+installation used for signed application casks, preserves pre-existing
 `/etc/bashrc` and `/etc/zshenv` files after confirmation, and performs the
 first system activation. Home Manager then creates every declared
 configuration link. When adopting an existing untapped Homebrew installation,
@@ -51,10 +52,13 @@ Later rebuilds can be run from the repository root with:
 sudo darwin-rebuild switch --flake '.#Matthews-MacBook-Pro'
 ```
 
-The six Homebrew casks are Codex, Discord, Ghostty, ProtonVPN, qutebrowser,
-and Raycast. The Homebrew installation is pinned by `nix-homebrew`; all
-formulae, shell tools, runtimes, fonts, and plugins are owned by Home Manager.
-The cask cleanup policy is deliberately non-destructive.
+Homebrew casks cover Android Studio, CapCut, ChatGPT, Codex, Discord, Ghostty,
+Google Chrome, OBS, Postman, ProtonVPN, qutebrowser, Raycast, Spotify,
+Surfshark, Tor Browser, and Zoom. App Store applications are declared by their
+numeric IDs and installed with the Nix-provided `mas` client. The Homebrew
+installation is pinned by `nix-homebrew`; all formulae, shell tools, runtimes,
+fonts, and plugins are owned by Home Manager. The cask cleanup policy is
+deliberately non-destructive.
 Explicit Dock, Finder, keyboard, trackpad, clock, screenshot, and window
 management preferences are declared in `nix/home-manager/darwin.nix`. Host
 identity and architecture are centralized in the root `flake.nix`; portable
