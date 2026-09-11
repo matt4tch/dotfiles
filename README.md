@@ -46,6 +46,13 @@ first system activation. Home Manager then creates every declared
 configuration link. When adopting an existing untapped Homebrew installation,
 the bootstrap safely replaces its empty taps directory; it refuses to remove
 any locally added taps.
+
+Home Manager also builds the small signed EventKit Calendar helper when it is
+missing. macOS Calendar access is intentionally not pre-authorized: approve the
+helper once when prompted on a new Mac. Later activations validate and preserve
+the existing signed bundle so routine rebuilds do not invalidate that
+permission.
+
 Later rebuilds can be run from the repository root with:
 
 ```bash
@@ -53,12 +60,13 @@ sudo darwin-rebuild switch --flake '.#Matthews-MacBook-Pro'
 ```
 
 Homebrew casks cover Android Studio, CapCut, ChatGPT, Codex, Discord, Ghostty,
-Google Chrome, OBS, Postman, ProtonVPN, qutebrowser, Raycast, Spotify,
-Surfshark, Tor Browser, and Zoom. App Store applications are declared by their
-numeric IDs and installed with the Nix-provided `mas` client. The Homebrew
-installation is pinned by `nix-homebrew`; all formulae, shell tools, runtimes,
-fonts, and plugins are owned by Home Manager. The cask cleanup policy is
-deliberately non-destructive.
+Google Chrome, OBS, Postman, ProtonVPN, Raycast, Spotify, Surfshark, Tor Browser,
+and Zoom. qutebrowser's official Apple Silicon bundle is pinned directly in
+Nix because Homebrew disabled its cask; this avoids a large local Qt WebEngine
+build. App Store applications are declared by their numeric IDs and installed
+with the Nix-provided `mas` client. The Homebrew installation is pinned by
+`nix-homebrew`; all formulae, shell tools, runtimes, fonts, and plugins are
+owned by Home Manager. The cask cleanup policy is deliberately non-destructive.
 Explicit Dock, Finder, keyboard, trackpad, clock, screenshot, and window
 management preferences are declared in `nix/home-manager/darwin.nix`. Host
 identity and architecture are centralized in the root `flake.nix`; portable
