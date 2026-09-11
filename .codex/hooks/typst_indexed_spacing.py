@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Block Codex completion when edited Typst math has an unspaced indexed call."""
+"""Block Codex completion when edited Typst math violates source conventions."""
 
 from __future__ import annotations
 
@@ -125,6 +125,84 @@ def math_mask(text: str) -> bytearray:
     return mask
 
 
+def padded_math_string_candidates(path: Path, text: str) -> list[dict]:
+    """Find quoted math text with whitespace inside either quotation mark."""
+    findings: list[dict] = []
+    in_math = False
+    index = 0
+
+    while index < len(text):
+        if text.startswith("//", index):
+            newline = text.find("\n", index + 2)
+            index = len(text) if newline < 0 else newline + 1
+            continue
+
+        if text.startswith("/*", index):
+            depth = 1
+            index += 2
+            while index < len(text) and depth:
+                if text.startswith("/*", index):
+                    depth += 1
+                    index += 2
+                elif text.startswith("*/", index):
+                    depth -= 1
+                    index += 2
+                else:
+                    index += 1
+            continue
+
+        if text[index] == "`":
+            ticks = 1
+            while index + ticks < len(text) and text[index + ticks] == "`":
+                ticks += 1
+            delimiter = "`" * ticks
+            end = text.find(delimiter, index + ticks)
+            index = len(text) if end < 0 else end + ticks
+            continue
+
+        if text[index] == "$" and (index == 0 or text[index - 1] != "\\"):
+            in_math = not in_math
+            index += 1
+            continue
+
+        if text[index] == '"':
+            quote_start = index
+            index += 1
+            content_start = index
+            while index < len(text):
+                if text[index] == "\\":
+                    index += 2
+                elif text[index] == '"':
+                    break
+                else:
+                    index += 1
+
+            if index < len(text) and in_math:
+                content = text[content_start:index]
+                if content and (content[0].isspace() or content[-1].isspace()):
+                    line = text.count("\n", 0, quote_start) + 1
+                    line_start = text.rfind("\n", 0, quote_start) + 1
+                    line_end = text.find("\n", index)
+                    if line_end < 0:
+                        line_end = len(text)
+                    findings.append(
+                        {
+                            "path": str(path),
+                            "line": line,
+                            "column": quote_start - line_start + 1,
+                            "expression": text[quote_start : index + 1],
+                            "context": text[line_start:line_end].strip(),
+                            "rule": "padded-math-string",
+                        }
+                    )
+            index += 1
+            continue
+
+        index += 1
+
+    return findings
+
+
 def balanced_subscript_end(text: str, start: int, mask: bytearray) -> int | None:
     if start >= len(text) or text[start] != "(" or not mask[start]:
         return None
@@ -163,7 +241,7 @@ def candidates(path: Path) -> list[dict]:
     if text is None:
         return []
     mask = math_mask(text)
-    findings: list[dict] = []
+    findings = padded_math_string_candidates(path, text)
 
     for match in BASE_PATTERN.finditer(text):
         start = match.start()
@@ -205,6 +283,7 @@ def candidates(path: Path) -> list[dict]:
                 "column": column,
                 "expression": text[start : end + 1],
                 "context": text[line_start:line_end].strip(),
+                "rule": "indexed-call",
             }
         )
 
@@ -416,8 +495,9 @@ def stop(event: dict) -> int:
 
     if findings:
         lines = [
-            "Typst indexed-function spacing review failed.",
-            "Inspect and fix every candidate; use a space such as `f_a (x)`.",
+            "Typst source review failed.",
+            "Inspect and fix every candidate. Use `f_a (x)` for indexed calls, "
+            "and remove padding inside quoted math text such as `\" text \"`.",
             "",
         ]
         for finding in findings[:100]:

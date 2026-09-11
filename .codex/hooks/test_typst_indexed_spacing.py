@@ -54,6 +54,27 @@ class CandidateTests(unittest.TestCase):
     def test_ignores_unindexed_calls(self):
         self.assertEqual(self.scan("$clos(x) + abs(y) + f (z)$"), [])
 
+    def test_finds_padded_quoted_text_in_math(self):
+        self.assertEqual(
+            self.scan('$f " padded " + g "leading " + h " trailing"$'),
+            ['" padded "', '"leading "', '" trailing"'],
+        )
+
+    def test_accepts_unpadded_quoted_text_in_math(self):
+        self.assertEqual(
+            self.scan('$f "is continuous and bounded" + mu"-measurable"$'),
+            [],
+        )
+
+    def test_ignores_padded_strings_outside_math_comments_and_raw_text(self):
+        source = '''
+        #let label = " padded code string "
+        // $f " padded comment "$
+        /* $f " padded block comment "$ */
+        `$f " padded raw text "$`
+        '''
+        self.assertEqual(self.scan(source), [])
+
     def test_ignores_binary_typ_suffixed_files(self):
         with tempfile.NamedTemporaryFile("wb", suffix=".typ") as file:
             file.write(b"Vim\x00binary\xff$f_a(x)$")

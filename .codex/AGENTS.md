@@ -1,4 +1,4 @@
-# Mandatory Typst indexed-function review
+# Mandatory Typst source review
 
 For every task in which you create or modify any `.typ` file:
 
@@ -6,7 +6,8 @@ For every task in which you create or modify any `.typ` file:
    `/Users/matthew4.tch/.codex/hooks/typst_indexed_spacing.py` records changed
    Typst paths using a session-scoped filesystem watcher and blocks completion
    when a changed file contains an indexed identifier immediately followed by
-   `(`. Do not disable, bypass, or weaken this check.
+   `(` or padded quoted text inside math. Do not disable, bypass, or weaken
+   this check.
 2. If the hook reports candidates such as `f_a(x)`, `f_j(z)`, `phi_n(t)`, or
    `Phi_(A)(z)`, inspect each one individually in its mathematical context.
    Never use
@@ -27,6 +28,10 @@ For every task in which you create or modify any `.typ` file:
    Typst code-level function calls, or to indexed expressions where the
    following parentheses are intentionally part of the subscript or another
    mathematical construction.
-5. The hook is a mandatory completion gate. Do not claim the task is finished
+5. Quoted text inside Typst math must not contain padding immediately inside
+   the quotation marks. Write `f "is continuous"`, not
+   `f " is continuous "`. Put semantic spaces outside the text literal or let
+   Typst's math spacing handle them.
+6. The hook is a mandatory completion gate. Do not claim the task is finished
    while it reports a candidate. Correct each reported occurrence before
    completing the task.
