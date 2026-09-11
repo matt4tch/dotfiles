@@ -114,7 +114,6 @@
       "obs"
       "postman"
       "protonvpn"
-      "qutebrowser"
       "raycast"
       "spotify"
       "surfshark"

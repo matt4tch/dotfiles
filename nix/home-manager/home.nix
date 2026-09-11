@@ -8,6 +8,57 @@
 }:
 
 let
+  calendarHelperSkill = ../../.codex/skills/apple-calendar-eventkit;
+
+  qutebrowserDracula = pkgs.fetchFromGitHub {
+    owner = "dracula";
+    repo = "qutebrowser-dracula-theme";
+    rev = "791de19ce6a43f0fa52405eea57cba43b4c05a22";
+    hash = "sha256-BXTvYFZnzEDlNEOTaWm4m8MEelVrRsUkNdwYKxaxw/g=";
+  };
+
+  # Homebrew disabled its qutebrowser cask after the upstream ad-hoc-signed
+  # bundle failed Gatekeeper assessment. Pin that same official release in Nix
+  # instead; Nix store paths are not quarantined, so the bundle remains usable
+  # without compiling Qt WebEngine locally.
+  qutebrowserBin = pkgs.stdenvNoCC.mkDerivation {
+    pname = "qutebrowser-bin";
+    version = "3.7.0";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/qutebrowser/qutebrowser/releases/download/v3.7.0/qutebrowser-3.7.0-arm64.dmg";
+      hash = "sha256-mBcCQb8Sov4d6r/8gSC3DcjgDlVbtxLDh1HESPBJVKM=";
+    };
+
+    nativeBuildInputs = [
+      pkgs.makeWrapper
+      pkgs.undmg
+    ];
+    sourceRoot = ".";
+    dontFixup = true;
+
+    installPhase = ''
+      runHook preInstall
+
+      mkdir -p "$out/Applications" "$out/bin"
+      cp -R qutebrowser.app "$out/Applications/"
+      makeWrapper \
+        "$out/Applications/qutebrowser.app/Contents/MacOS/qutebrowser" \
+        "$out/bin/qutebrowser"
+
+      runHook postInstall
+    '';
+
+    meta = {
+      description = "Keyboard-driven browser with a minimal GUI";
+      homepage = "https://qutebrowser.org/";
+      license = pkgs.lib.licenses.gpl3Plus;
+      mainProgram = "qutebrowser";
+      platforms = [ "aarch64-darwin" ];
+      sourceProvenance = [ pkgs.lib.sourceTypes.binaryNativeCode ];
+    };
+  };
+
   # These packages currently have test-suite-only failures on aarch64-darwin
   # after their build products succeed (a randomized floating-point property
   # test in SciPy and snapshot harness failures in inline-snapshot). Override
@@ -160,13 +211,13 @@ in
     wget
     yarn
 
-    # Document authoring and course tools. qutebrowser stays on Homebrew for
-    # now because its pinned Nix package requires a large local Qt WebEngine
-    # build. The Python environment replaces the previously user-installed
-    # Jupyter, scientific Python, and Neovim provider packages.
+    # Document authoring and course tools. The Python environment replaces the
+    # previously user-installed Jupyter, scientific Python, and Neovim provider
+    # packages.
     mermaid-cli
     pythonWithUserTools
     quarto
+    qutebrowserBin
     racket
     sioyekWithDarwinResources
     texliveMedium
@@ -177,6 +228,10 @@ in
     nerd-fonts.hack
     zulu17
 
+  ] ++ [
+    # The nix-darwin Home Manager module enables submodule support, under
+    # which programs.home-manager does not add its CLI package automatically.
+    config.programs.home-manager.package
   ];
 
   # Files without a useful native Home Manager module are still declarative:
@@ -188,6 +243,20 @@ in
     ".profile".source = ../../.profile;
     ".p10k.zsh".source = ../../.p10k.zsh;
     ".vimrc".source = ../../.vimrc;
+    ".qutebrowser/config.py".text = ''
+      import dracula.draw
+
+      # Load settings changed interactively with :set from autoconfig.yml.
+      config.load_autoconfig()
+
+      dracula.draw.blood(c, {
+          "spacing": {
+              "vertical": 6,
+              "horizontal": 8,
+          }
+      })
+    '';
+    ".qutebrowser/dracula".source = qutebrowserDracula;
 
     # tmux itself writes the generated configuration under XDG_CONFIG_HOME.
     # Keep the traditional path as a managed link because tmux prefers it when
@@ -200,7 +269,7 @@ in
     ".codex/config.toml".source = ../../.codex/config.toml;
     ".codex/hooks.json".source = ../../.codex/hooks.json;
     ".codex/hooks".source = ../../.codex/hooks;
-    ".codex/skills/apple-calendar-eventkit".source = ../../.codex/skills/apple-calendar-eventkit;
+    ".codex/skills/apple-calendar-eventkit".source = calendarHelperSkill;
     ".codex/skills/git-usage".source = ../../.codex/skills/git-usage;
 
     # Generate the conventional Git path too. This prevents an older
@@ -268,13 +337,6 @@ in
         zstyle ':omz:update' mode disabled
       '';
     };
-    plugins = [
-      {
-        name = "powerlevel10k";
-        src = pkgs.zsh-powerlevel10k;
-        file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
-      }
-    ];
     initContent = lib.mkMerge [
       (lib.mkOrder 500 ''
         if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
@@ -301,6 +363,11 @@ in
         typeset -gU path PATH
         export PATH
         unset nix_profile_root nix_profile_roots
+      '')
+      (lib.mkOrder 900 ''
+        # Source the theme directly instead of registering it as a generic zsh
+        # plugin, which would add its source directory to executable PATH.
+        source "${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme"
       '')
       (lib.mkOrder 1000 ''
         # Preferred editor for local and remote sessions.
@@ -375,6 +442,29 @@ in
       StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/tmux-restore-on-login.log";
     };
   };
+
+  # EventKit attributes Calendar permission to the signed application identity.
+  # Install the helper on a fresh machine, but preserve a valid existing bundle
+  # so routine switches do not change its ad-hoc signature and revoke access.
+  home.activation.ensureCalendarHelper = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    helper_app="${config.home.homeDirectory}/Applications/Codex Calendar Helper.app"
+    helper_binary="$helper_app/Contents/MacOS/calendar-helper"
+
+    if [[ ! -e "$helper_app" ]]; then
+      CODEX_CALENDAR_HELPER_APP="$helper_app" \
+        /bin/zsh "${calendarHelperSkill}/scripts/install_helper.sh"
+    elif [[ ! -x "$helper_binary" ]]; then
+      echo "Calendar helper exists but its executable is missing: $helper_binary" >&2
+      exit 1
+    elif ! /usr/bin/codesign --verify --strict "$helper_app"; then
+      echo "Calendar helper has an invalid code signature: $helper_app" >&2
+      exit 1
+    elif [[ "$(/usr/bin/plutil -extract CFBundleIdentifier raw "$helper_app/Contents/Info.plist")" != \
+      "com.matthew4tch.CodexCalendarHelper" ]]; then
+      echo "Calendar helper has an unexpected bundle identifier: $helper_app" >&2
+      exit 1
+    fi
+  '';
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
