@@ -363,6 +363,11 @@ in
       # Load settings changed interactively with :set from autoconfig.yml.
       config.load_autoconfig()
 
+      config.bind("j", "scroll down")
+      config.bind("k", "scroll up")
+      config.bind("<Ctrl-d>", "scroll-page 0 0.5")
+      config.bind("<Ctrl-u>", "scroll-page 0 -0.5")
+
       dracula.draw.blood(c, {
           "spacing": {
               "vertical": 6,
