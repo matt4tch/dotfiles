@@ -1,4 +1,5 @@
 {
+  codex-cli-nix,
   config,
   homeDirectory,
   lib,
@@ -338,6 +339,10 @@ in
     zulu17
 
   ] ++ [
+    # Track the frequently updated native Codex CLI package independently of
+    # the ChatGPT desktop app managed as a Homebrew cask.
+    codex-cli-nix.packages.${pkgs.stdenv.hostPlatform.system}.default
+
     # The nix-darwin Home Manager module enables submodule support, under
     # which programs.home-manager does not add its CLI package automatically.
     config.programs.home-manager.package

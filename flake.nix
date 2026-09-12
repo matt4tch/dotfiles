@@ -13,6 +13,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    codex-cli-nix.url = "github:sadjow/codex-cli-nix";
   };
 
   outputs =
@@ -21,6 +22,7 @@
       home-manager,
       nix-darwin,
       nix-homebrew,
+      codex-cli-nix,
       ...
     }:
     let
@@ -42,7 +44,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "before-home-manager";
-            home-manager.extraSpecialArgs = { inherit homeDirectory username; };
+            home-manager.extraSpecialArgs = { inherit codex-cli-nix homeDirectory username; };
             home-manager.users.${username} = import ./nix/home-manager/home.nix;
           }
         ];
@@ -56,7 +58,7 @@
         # Specify your home configuration modules here, for example,
         # the path to your home.nix.
         modules = [ ./nix/home-manager/home.nix ];
-        extraSpecialArgs = { inherit homeDirectory username; };
+        extraSpecialArgs = { inherit codex-cli-nix homeDirectory username; };
       };
     };
 }
