@@ -109,7 +109,6 @@
       "android-studio"
       "capcut"
       "chatgpt"
-      "codex"
       "discord"
       "ghostty"
       "google-chrome"
