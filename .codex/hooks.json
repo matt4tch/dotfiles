@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 /Users/matthew4.tch/.codex/hooks/typst_indexed_spacing.py start",
+            "command": "/usr/bin/env python3 \"$HOME/.codex/hooks/typst_indexed_spacing.py\" start",
             "timeout": 30
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 /Users/matthew4.tch/.codex/hooks/typst_indexed_spacing.py stop",
+            "command": "/usr/bin/env python3 \"$HOME/.codex/hooks/typst_indexed_spacing.py\" stop",
             "timeout": 30
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 /Users/matthew4.tch/.codex/hooks/typst_indexed_spacing.py end",
+            "command": "/usr/bin/env python3 \"$HOME/.codex/hooks/typst_indexed_spacing.py\" end",
             "timeout": 3
           }
         ]

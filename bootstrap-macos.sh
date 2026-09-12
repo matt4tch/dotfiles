@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FLAKE_DIR="$SCRIPT_DIR"
 FLAKE_REF="git+file://$FLAKE_DIR"
-SYSTEM_NAME="Matthews-MacBook-Pro"
+SYSTEM_NAME="macos"
 
 log() {
   printf '[bootstrap-macos] %s\n' "$*" >&2
@@ -50,6 +50,7 @@ fi
 log "building the pinned nix-darwin system"
 SYSTEM_PATH="$("$NIX_BIN" build \
   "$FLAKE_REF#darwinConfigurations.\"$SYSTEM_NAME\".system" \
+  --impure \
   --no-link --print-out-paths)"
 
 backup_etc_file() {
@@ -82,6 +83,7 @@ backup_etc_file /etc/zshenv
 
 log "activating $SYSTEM_NAME"
 sudo "$SYSTEM_PATH/sw/bin/darwin-rebuild" switch \
+  --impure \
   --flake "$FLAKE_REF#$SYSTEM_NAME"
 
 # The official Homebrew checkout links its generated completion through the

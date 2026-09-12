@@ -3,7 +3,7 @@
 For every task in which you create or modify any `.typ` file:
 
 1. The global SessionStart/Stop hook
-   `/Users/matthew4.tch/.codex/hooks/typst_indexed_spacing.py` records changed
+   `~/.codex/hooks/typst_indexed_spacing.py` records changed
    Typst paths using a session-scoped filesystem watcher and blocks completion
    when a changed file contains an indexed identifier immediately followed by
    `(` or padded quoted text inside math. Do not disable, bypass, or weaken

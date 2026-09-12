@@ -1,5 +1,5 @@
 {
-  description = "Declarative macOS and Home Manager configuration for matthew4.tch";
+  description = "Portable declarative macOS and Home Manager configuration";
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
@@ -24,12 +24,7 @@
       ...
     }:
     let
-      host = {
-        name = "Matthews-MacBook-Pro";
-        system = "aarch64-darwin";
-        username = "matthew4.tch";
-        homeDirectory = "/Users/matthew4.tch";
-      };
+      host = import ./nix/hosts/current.nix;
       inherit (host) homeDirectory system username;
       pkgs = import nixpkgs {
         inherit system;
@@ -37,7 +32,7 @@
       };
     in
     {
-      darwinConfigurations.${host.name} = nix-darwin.lib.darwinSystem {
+      darwinConfigurations.macos = nix-darwin.lib.darwinSystem {
         specialArgs = { inherit homeDirectory system username; };
         modules = [
           nix-homebrew.darwinModules.nix-homebrew
@@ -55,7 +50,7 @@
 
       # Keep a standalone Home Manager output for building and testing user
       # configuration without requiring administrator privileges.
-      homeConfigurations.${username} = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations.default = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
 
         # Specify your home configuration modules here, for example,
