@@ -141,11 +141,6 @@
     update = false;
     cleanup = false;
     packages = {
-      "AdGuard for Safari" = 1440147259;
-      Goodnotes = 1444383602;
-      OneDrive = 823766827;
-      Pages = 409201541;
-      WhatsApp = 310633997;
       Xcode = 497799835;
     };
   };
