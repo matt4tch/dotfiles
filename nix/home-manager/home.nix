@@ -469,6 +469,8 @@ in
     enable = true;
     dotDir = config.home.homeDirectory;
     defaultKeymap = "viins";
+    shellAliases.darwin-switch =
+      "sudo darwin-rebuild switch --impure --flake ${homeDirectory}/dotfiles#macos";
     loginExtra = builtins.readFile ../../.zlogin;
     syntaxHighlighting.enable = true;
     oh-my-zsh = {
