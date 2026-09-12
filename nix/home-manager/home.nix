@@ -363,10 +363,25 @@ in
       # Load settings changed interactively with :set from autoconfig.yml.
       config.load_autoconfig()
 
-      config.bind("j", "scroll down")
-      config.bind("k", "scroll up")
-      config.bind("<Ctrl-d>", "scroll-page 0 0.5")
-      config.bind("<Ctrl-u>", "scroll-page 0 -0.5")
+      # Tinymist renders its preview in an inner scrolling container, while
+      # qutebrowser's scroll commands target the document. Scroll whichever is
+      # applicable without requiring passthrough mode.
+      def scroll_command(method, amount):
+          return (
+              'jseval --quiet (() => { '
+              'const e = document.getElementById("typst-container-main"); '
+              f'(e || window).{method}(0, {amount});'
+              ' })()'
+          )
+
+      config.bind("j", scroll_command("scrollBy", "e ? 50 : 100"))
+      config.bind("k", scroll_command("scrollBy", "e ? -50 : -100"))
+      config.bind("<Ctrl-d>", scroll_command("scrollBy", "(e ? e.clientHeight : window.innerHeight) / 2"))
+      config.bind("<Ctrl-u>", scroll_command("scrollBy", "-(e ? e.clientHeight : window.innerHeight) / 2"))
+      config.bind("gg", scroll_command("scrollTo", "0"))
+      config.bind("G", scroll_command("scrollTo", "e ? e.scrollHeight : document.documentElement.scrollHeight"))
+      config.bind("<Ctrl-n>", "tab-next")
+      config.bind("<Ctrl-p>", "tab-prev")
 
       dracula.draw.blood(c, {
           "spacing": {
