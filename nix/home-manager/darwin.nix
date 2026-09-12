@@ -17,6 +17,11 @@
 
   users.users.${username}.home = homeDirectory;
 
+  system.keyboard = {
+    enableKeyMapping = true;
+    remapCapsLockToEscape = true;
+  };
+
   nix = {
     package = pkgs.nix;
     settings.experimental-features = [
@@ -46,6 +51,7 @@
       KeyRepeat = 2;
       NSAutomaticCapitalizationEnabled = true;
       NSAutomaticPeriodSubstitutionEnabled = true;
+      "com.apple.trackpad.scaling" = 3.0;
     };
 
     dock = {
@@ -136,15 +142,7 @@
     cleanup = false;
     packages = {
       "AdGuard for Safari" = 1440147259;
-      GarageBand = 682658836;
       Goodnotes = 1444383602;
-      Keynote = 409183694;
-      "Microsoft Excel" = 462058435;
-      "Microsoft OneNote" = 784801555;
-      "Microsoft Outlook" = 985367838;
-      "Microsoft PowerPoint" = 462062816;
-      "Microsoft Word" = 462054704;
-      Numbers = 409203825;
       OneDrive = 823766827;
       Pages = 409201541;
       WhatsApp = 310633997;
