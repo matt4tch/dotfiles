@@ -53,10 +53,18 @@ helper once when prompted on a new Mac. Later activations validate and preserve
 the existing signed bundle so routine rebuilds do not invalidate that
 permission.
 
-Later rebuilds can be run from the repository root with:
+Mac App Store applications are installed through nix-darwin's native `mas`
+module as the current primary user. Their numeric app IDs are stable; sign-in,
+ownership, and storefront availability remain local to each Apple ID. A signed-
+out account or an unavailable individual app therefore does not abort the rest
+of the system activation.
+
+Later rebuilds use the generic `macos` flake configuration. The modular
+`nix/hosts/current.nix` resolver derives the invoking account and platform, so
+the root flake contains no machine name or username:
 
 ```bash
-sudo darwin-rebuild switch --flake '.#Matthews-MacBook-Pro'
+sudo darwin-rebuild switch --impure --flake '.#macos'
 ```
 
 Homebrew casks cover Android Studio, CapCut, ChatGPT, Codex, Discord, Ghostty,
@@ -69,8 +77,8 @@ with the Nix-provided `mas` client. The Homebrew installation is pinned by
 owned by Home Manager. The cask cleanup policy is deliberately non-destructive.
 Explicit Dock, Finder, keyboard, trackpad, clock, screenshot, and window
 management preferences are declared in `nix/home-manager/darwin.nix`. Host
-identity and architecture are centralized in the root `flake.nix`; portable
-user configuration lives in `nix/home-manager/home.nix`.
+discovery lives in `nix/hosts/current.nix`; portable user configuration lives
+in `nix/home-manager/home.nix`.
 
 Apple ID and iCloud state, passwords, application logins, user documents, and
 macOS privacy permissions are intentionally not stored in this repository.
@@ -78,7 +86,7 @@ macOS privacy permissions are intentionally not stored in this repository.
 The standalone Home Manager output can be built without administrator access:
 
 ```bash
-nix build '.#homeConfigurations."matthew4.tch".activationPackage'
+nix build --impure '.#homeConfigurations.default.activationPackage'
 ```
 
 Use the Git-aware `.` flake reference for this repository. It excludes ignored
@@ -161,8 +169,9 @@ idempotency, and writes dummy `~/.codex/skills/.system/` and
 `~/.config/gh/hosts.yml` contents between runs to confirm the second run
 leaves them untouched.
 
-macOS can't be tested inside Docker. Validate it with `nix flake check` and the
-standalone Home Manager build shown above before running `darwin-rebuild switch`.
+macOS can't be tested inside Docker. Validate it with the standalone Home
+Manager build shown above, or run `nix flake check --impure`, before running
+the `darwin-rebuild` command above.
 
 ## Troubleshooting
 

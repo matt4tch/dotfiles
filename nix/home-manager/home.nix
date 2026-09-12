@@ -9,6 +9,115 @@
 
 let
   calendarHelperSkill = ../../.codex/skills/apple-calendar-eventkit;
+  codexHome = "${config.home.homeDirectory}/.codex";
+  codexHookScript = "${codexHome}/hooks/typst_indexed_spacing.py";
+  codexHook = action: timeout: {
+    hooks = [
+      {
+        type = "command";
+        command = "${pkgs.python3}/bin/python3 ${lib.escapeShellArg codexHookScript} ${action}";
+        inherit timeout;
+      }
+    ];
+  };
+
+  # This is copied only when Codex has no user config. Codex owns and mutates
+  # the resulting regular file; declarative hook inputs remain separate below.
+  codexConfigSeed = (pkgs.formats.toml { }).generate "codex-config.toml" {
+    model = "gpt-5.6-sol";
+    model_reasoning_effort = "medium";
+    approvals_reviewer = "auto_review";
+    notify = [
+      "${codexHome}/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+      "turn-ended"
+    ];
+
+    features = {
+      memories = true;
+      js_repl = false;
+    };
+    notice.model_migrations."gpt-5.3-codex" = "gpt-5.4";
+    tui = {
+      vim_mode_default = true;
+      model_availability_nux.gpt-6-astra = 4;
+    };
+    desktop = {
+      followUpQueueMode = "queue";
+      appearanceTheme = "dark";
+      conversationDetailMode = "STEPS_COMMANDS";
+    };
+
+    projects = {
+      "${config.home.homeDirectory}".trust_level = "untrusted";
+      "${config.home.homeDirectory}/dev".trust_level = "trusted";
+      "${config.home.homeDirectory}/dotfiles".trust_level = "trusted";
+      "${config.home.homeDirectory}/scratch".trust_level = "trusted";
+      "${config.home.homeDirectory}/uw".trust_level = "trusted";
+      "${config.home.homeDirectory}/uw/f26".trust_level = "trusted";
+    };
+
+    marketplaces = {
+      openai-bundled = {
+        source_type = "local";
+        source = "${codexHome}/.tmp/bundled-marketplaces/openai-bundled";
+      };
+      openai-primary-runtime = {
+        source_type = "local";
+        source = "${config.home.homeDirectory}/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime";
+      };
+    };
+
+    plugins = {
+      "sites@openai-bundled".enabled = true;
+      "visualize@openai-bundled".enabled = true;
+      "documents@openai-primary-runtime".enabled = true;
+      "pdf@openai-primary-runtime".enabled = true;
+      "spreadsheets@openai-primary-runtime".enabled = true;
+      "presentations@openai-primary-runtime".enabled = true;
+      "template-creator@openai-primary-runtime".enabled = true;
+      "browser@openai-bundled".enabled = true;
+      "codex-app-tools@openai-bundled".enabled = true;
+      "unified-computer-use@openai-bundled".enabled = true;
+      "computer-use@openai-bundled".enabled = true;
+    };
+
+    mcp_servers = {
+      node_repl = {
+        args = [ ];
+        command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl";
+        startup_timeout_sec = 120;
+        env = {
+          NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000";
+          NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules";
+          NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node";
+          NODE_REPL_TRUSTED_CODE_PATHS = "${codexHome}:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules";
+          CODEX_HOME = codexHome;
+          BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab";
+          BROWSER_USE_TINYSKY_ENABLED = "1";
+          NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "";
+          NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "";
+          NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "";
+          BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod";
+          BROWSER_USE_CODEX_APP_VERSION = "26.903.61454";
+          NODE_REPL_TRUSTED_SERVICES = builtins.toJSON {
+            browser = "${codexHome}/plugins/cache/openai-bundled/browser/26.903.61454/scripts/browser-service.mjs";
+            sky = "@oai/sky/service";
+          };
+          SKY_CUA_SERVICE_PATH = "${codexHome}/computer-use/Codex Computer Use.app";
+          CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex";
+        };
+      };
+      computer-use = {
+        command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient";
+        args = [ "mcp" ];
+        cwd = ".";
+        enabled = false;
+      };
+    };
+
+    shell_environment_policy.set.NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S =
+      "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df";
+  };
 
   qutebrowserDracula = pkgs.fetchFromGitHub {
     owner = "dracula";
@@ -263,11 +372,16 @@ in
     # both locations exist.
     ".tmux.conf".source = config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/tmux/tmux.conf";
 
-    # Preserve Codex's runtime-managed ~/.codex/skills/.system directory by
-    # managing only the version-controlled entries around it.
+    # Preserve Codex's runtime-managed config and skills/.system directory by
+    # managing only immutable, declarative inputs around them.
     ".codex/AGENTS.md".source = ../../.codex/AGENTS.md;
-    ".codex/config.toml".source = ../../.codex/config.toml;
-    ".codex/hooks.json".source = ../../.codex/hooks.json;
+    ".codex/hooks.json".text = builtins.toJSON {
+      hooks = {
+        SessionStart = [ (codexHook "start" 30) ];
+        Stop = [ (codexHook "stop" 30) ];
+        SessionEnd = [ (codexHook "end" 3) ];
+      };
+    };
     ".codex/hooks".source = ../../.codex/hooks;
     ".codex/skills/apple-calendar-eventkit".source = calendarHelperSkill;
     ".codex/skills/git-usage".source = ../../.codex/skills/git-usage;
@@ -282,6 +396,28 @@ in
       init.defaultBranch = "main";
     };
   };
+
+  home.activation.ensureWritableCodexConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    codex_config=${lib.escapeShellArg "${codexHome}/config.toml"}
+
+    if [[ -L "$codex_config" ]]; then
+      codex_config_target="$(readlink "$codex_config")"
+      case "$codex_config_target" in
+        /nix/store/*)
+          $DRY_RUN_CMD /bin/rm -f "$codex_config"
+          ;;
+        *)
+          echo "Refusing to replace unmanaged Codex config link: $codex_config -> $codex_config_target" >&2
+          exit 1
+          ;;
+      esac
+    fi
+
+    if [[ ! -e "$codex_config" ]]; then
+      $DRY_RUN_CMD /bin/mkdir -p ${lib.escapeShellArg codexHome}
+      $DRY_RUN_CMD /usr/bin/install -m 0600 ${codexConfigSeed} "$codex_config"
+    fi
+  '';
 
   home.sessionVariables = {
     VISUAL = "nvim";

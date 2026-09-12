@@ -35,10 +35,6 @@
     mutableTaps = false;
   };
 
-  # nix-darwin invokes `mas` while realizing the App Store section of its
-  # Brewfile, before Home Manager activates the user profile.
-  environment.systemPackages = [ pkgs.mas ];
-
   # Preserve the explicit, user-visible preferences on this Mac. Settings that
   # were absent from the defaults database remain unmanaged so macOS can retain
   # its platform defaults.
@@ -120,7 +116,25 @@
       "tor-browser"
       "zoom"
     ];
-    masApps = {
+    global.autoUpdate = false;
+    onActivation = {
+      autoUpdate = false;
+      upgrade = false;
+      cleanup = "none";
+    };
+  };
+
+  # Manage App Store applications separately from Homebrew Bundle. App IDs are
+  # global; account ownership, storefront availability, and sign-in state are
+  # machine-local. The native module skips a signed-out account and treats an
+  # unavailable individual app as non-fatal, so those differences do not break
+  # the rest of the nix-darwin activation.
+  programs.mas = {
+    enable = true;
+    user = username;
+    update = false;
+    cleanup = false;
+    packages = {
       "AdGuard for Safari" = 1440147259;
       GarageBand = 682658836;
       Goodnotes = 1444383602;
@@ -135,12 +149,6 @@
       Pages = 409201541;
       WhatsApp = 310633997;
       Xcode = 497799835;
-    };
-    global.autoUpdate = false;
-    onActivation = {
-      autoUpdate = false;
-      upgrade = false;
-      cleanup = "none";
     };
   };
 }
