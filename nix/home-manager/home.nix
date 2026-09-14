@@ -444,6 +444,22 @@ in
     fi
   '';
 
+  # Home Manager links GUI bundles into a directory that LaunchServices does
+  # not reliably scan. Register Sioyek explicitly before making it the PDF
+  # handler so the association also works on a fresh macOS installation.
+  home.activation.setSioyekAsDefaultPdfViewer = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    sioyek_app=${lib.escapeShellArg "${config.home.homeDirectory}/Applications/Home Manager Apps/sioyek.app"}
+    lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+    if [[ ! -d "$sioyek_app" ]]; then
+      echo "Sioyek application bundle is missing: $sioyek_app" >&2
+      exit 1
+    fi
+
+    $DRY_RUN_CMD "$lsregister" -f "$sioyek_app"
+    $DRY_RUN_CMD ${pkgs.duti}/bin/duti -s info.sioyek.sioyek com.adobe.pdf all
+  '';
+
   home.sessionVariables = {
     VISUAL = "nvim";
   };
