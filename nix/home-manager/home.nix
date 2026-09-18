@@ -1,5 +1,6 @@
 {
   codex-cli-nix,
+  darwinConfiguration,
   config,
   homeDirectory,
   lib,
@@ -501,7 +502,7 @@ in
     dotDir = config.home.homeDirectory;
     defaultKeymap = "viins";
     shellAliases.darwin-switch =
-      "sudo darwin-rebuild switch --impure --flake ${homeDirectory}/dotfiles#macos";
+      "sudo darwin-rebuild switch --impure --flake ${homeDirectory}/dotfiles#${darwinConfiguration}";
     loginExtra = builtins.readFile ../../.zlogin;
     syntaxHighlighting.enable = true;
     oh-my-zsh = {

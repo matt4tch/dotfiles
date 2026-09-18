@@ -32,9 +32,7 @@
         inherit system;
         config.allowUnfree = true;
       };
-    in
-    {
-      darwinConfigurations.macos = nix-darwin.lib.darwinSystem {
+      mkDarwin = darwinConfiguration: extraModules: nix-darwin.lib.darwinSystem {
         specialArgs = { inherit homeDirectory system username; };
         modules = [
           nix-homebrew.darwinModules.nix-homebrew
@@ -44,10 +42,16 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "before-home-manager";
-            home-manager.extraSpecialArgs = { inherit codex-cli-nix homeDirectory username; };
+            home-manager.extraSpecialArgs = { inherit codex-cli-nix darwinConfiguration homeDirectory username; };
             home-manager.users.${username} = import ./nix/home-manager/home.nix;
           }
-        ];
+        ] ++ extraModules;
+      };
+    in
+    {
+      darwinConfigurations = {
+        macos = mkDarwin "macos" [ ];
+        work-mac = mkDarwin "work-mac" [ ./nix/hosts/work-mac.nix ];
       };
 
       # Keep a standalone Home Manager output for building and testing user
@@ -58,7 +62,10 @@
         # Specify your home configuration modules here, for example,
         # the path to your home.nix.
         modules = [ ./nix/home-manager/home.nix ];
-        extraSpecialArgs = { inherit codex-cli-nix homeDirectory username; };
+        extraSpecialArgs = {
+          inherit codex-cli-nix homeDirectory username;
+          darwinConfiguration = "macos";
+        };
       };
     };
 }
