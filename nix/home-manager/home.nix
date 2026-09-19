@@ -299,6 +299,7 @@ in
     autoconf
     bun
     cargo
+    claude-code
     clippy
     coreutils-prefixed
     duti
