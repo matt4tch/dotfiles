@@ -462,6 +462,20 @@ in
     $DRY_RUN_CMD ${pkgs.duti}/bin/duti -s info.sioyek.sioyek com.adobe.pdf all
   '';
 
+  # Keep the Home Manager-managed bundle discoverable by LaunchServices so
+  # Typst Preview can reliably open and focus qutebrowser by application name.
+  home.activation.registerQutebrowser = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    qutebrowser_app=${lib.escapeShellArg "${config.home.homeDirectory}/Applications/Home Manager Apps/qutebrowser.app"}
+    lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+    if [[ ! -d "$qutebrowser_app" ]]; then
+      echo "qutebrowser application bundle is missing: $qutebrowser_app" >&2
+      exit 1
+    fi
+
+    $DRY_RUN_CMD "$lsregister" -f "$qutebrowser_app"
+  '';
+
   home.sessionVariables = {
     VISUAL = "nvim";
   };
