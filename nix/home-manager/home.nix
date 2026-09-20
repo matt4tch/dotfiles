@@ -309,6 +309,7 @@ in
     imagemagick
     jq
     lazygit
+    lean4
     luarocks
     minisat
     opencode
