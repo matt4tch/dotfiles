@@ -301,7 +301,9 @@ in
     cargo
     claude-code
     clippy
+    colima
     coreutils-prefixed
+    docker
     duti
     ffmpeg
     ghostscript
