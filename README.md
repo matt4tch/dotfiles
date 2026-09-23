@@ -60,7 +60,7 @@ out account or an unavailable individual app therefore does not abort the rest
 of the system activation.
 
 Later rebuilds use the generic `macos` flake configuration. The modular
-`nix/hosts/current.nix` resolver derives the invoking account and platform, so
+`nix/local-context.nix` resolver derives the invoking account and platform, so
 the root flake contains no machine name or username:
 
 ```bash
@@ -77,7 +77,7 @@ with the Nix-provided `mas` client. The Homebrew installation is pinned by
 owned by Home Manager. The cask cleanup policy is deliberately non-destructive.
 Explicit Dock, Finder, keyboard, trackpad, clock, screenshot, and window
 management preferences are declared in `nix/home-manager/darwin.nix`. Host
-discovery lives in `nix/hosts/current.nix`; portable user configuration lives
+discovery lives in `nix/local-context.nix`; portable user configuration lives
 in `nix/home-manager/home.nix`.
 
 Apple ID and iCloud state, passwords, application logins, user documents, and

@@ -26,7 +26,7 @@
       ...
     }:
     let
-      host = import ./nix/hosts/current.nix;
+      host = import ./nix/local-context.nix;
       inherit (host) homeDirectory system username;
       pkgs = import nixpkgs {
         inherit system;
