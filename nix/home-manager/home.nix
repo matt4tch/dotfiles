@@ -418,13 +418,7 @@ in
 
     # Generate the conventional Git path too. This prevents an older
     # ~/.gitconfig from shadowing Home Manager's XDG Git configuration.
-    ".gitconfig".text = lib.generators.toGitINI {
-      user = {
-        name = "Matthew Tchouikine";
-        email = "matthew4.tch@gmail.com";
-      };
-      init.defaultBranch = "main";
-    };
+    ".gitconfig".text = lib.generators.toGitINI config.programs.git.settings;
   };
 
   home.activation.ensureWritableCodexConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
@@ -497,6 +491,16 @@ in
         email = "matthew4.tch@gmail.com";
       };
       init.defaultBranch = "main";
+      # Let git reuse the gh CLI login for HTTPS remotes (e.g. private
+      # git+https dependencies fetched by uv).
+      credential."https://github.com".helper = [
+        ""
+        "!${pkgs.gh}/bin/gh auth git-credential"
+      ];
+      credential."https://gist.github.com".helper = [
+        ""
+        "!${pkgs.gh}/bin/gh auth git-credential"
+      ];
     };
   };
 
