@@ -612,6 +612,7 @@ in
         plugin = resurrect;
         extraConfig = ''
           set -g @resurrect-processes 'codex'
+          set -g @resurrect-save-command-strategy 'pgrep'
         '';
       }
       {
