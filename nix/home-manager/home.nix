@@ -628,7 +628,7 @@ in
 
       # Save the current state when the last client detaches. The immutable
       # plugin path is supplied directly by Nix, with no profile probing.
-      set-hook -g client-detached 'run-shell "${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/scripts/save.sh"'
+      set-hook -g client-detached 'run-shell "${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/scripts/save.sh quiet"'
     '';
   };
 
