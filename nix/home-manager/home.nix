@@ -23,6 +23,18 @@ let
     ];
   };
 
+  tmuxAssistantResurrect = pkgs.tmuxPlugins.mkTmuxPlugin {
+    pluginName = "assistant-resurrect";
+    version = "unstable-2026-09-26";
+    src = pkgs.fetchFromGitHub {
+      owner = "timvw";
+      repo = "tmux-assistant-resurrect";
+      rev = "c3895253bf3445548c8d007eb961ab8926de6226";
+      hash = "sha256-uMa/dVmTAtTV2wD3NilNWye01CEaPWh9XJCVB1dmcz8=";
+    };
+    rtpFilePath = "tmux-assistant-resurrect.tmux";
+  };
+
   # This is copied only when Codex has no user config. Codex owns and mutates
   # the resulting regular file; declarative hook inputs remain separate below.
   codexConfigSeed = (pkgs.formats.toml { }).generate "codex-config.toml" {
@@ -611,7 +623,6 @@ in
       {
         plugin = resurrect;
         extraConfig = ''
-          set -g @resurrect-processes 'codex'
           set -g @resurrect-save-command-strategy 'pgrep'
         '';
       }
@@ -621,6 +632,7 @@ in
           set -g @continuum-restore 'off'
         '';
       }
+      tmuxAssistantResurrect
       tmux-thumbs
     ];
     extraConfig = ''
