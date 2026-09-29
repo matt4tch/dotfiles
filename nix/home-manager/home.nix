@@ -1,5 +1,4 @@
 {
-  codex-cli-nix,
   darwinConfiguration,
   config,
   homeDirectory,
@@ -357,8 +356,9 @@ in
 
   ] ++ [
     # Track the frequently updated native Codex CLI package independently of
-    # the ChatGPT desktop app managed as a Homebrew cask.
-    codex-cli-nix.packages.${pkgs.stdenv.hostPlatform.system}.default
+    # the ChatGPT desktop app managed as a Homebrew cask. Pinned to
+    # nixpkgs-fresh via freshOverlay in flake.nix.
+    codex
 
     # The nix-darwin Home Manager module enables submodule support, under
     # which programs.home-manager does not add its CLI package automatically.
