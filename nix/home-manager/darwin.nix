@@ -109,6 +109,7 @@
       "android-studio"
       "capcut"
       "chatgpt"
+      "claude"
       "discord"
       "ghostty"
       "google-chrome"
