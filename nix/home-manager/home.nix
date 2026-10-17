@@ -549,6 +549,13 @@ in
         DEFAULT_USER=$USER
         DISABLE_LS_COLORS="true"
         zstyle ':omz:update' mode disabled
+
+        # Homebrew exports FPATH, so shells launched from different parents can
+        # inherit Oh My Zsh's completion directory in different positions.
+        # Remove it here; Oh My Zsh will prepend it consistently before compinit.
+        omz_completion_dir="''${ZSH_CACHE_DIR}/completions"
+        fpath=("''${(@)fpath:#$omz_completion_dir}")
+        unset omz_completion_dir
       '';
     };
     initContent = lib.mkMerge [
