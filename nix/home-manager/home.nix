@@ -608,6 +608,7 @@ in
 
   programs.tmux = {
     enable = true;
+    shell = "${pkgs.zsh}/bin/zsh";
     terminal = "screen-256color";
     keyMode = "vi";
     escapeTime = 0;

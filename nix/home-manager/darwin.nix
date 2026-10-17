@@ -15,7 +15,12 @@
   system.stateVersion = 7;
   system.primaryUser = username;
 
-  users.users.${username}.home = homeDirectory;
+  users.users.${username} = {
+    home = homeDirectory;
+    shell = pkgs.zsh;
+  };
+
+  programs.zsh.enable = true;
 
   system.keyboard = {
     enableKeyMapping = true;
