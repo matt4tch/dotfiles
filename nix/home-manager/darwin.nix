@@ -1,5 +1,6 @@
 {
   homeDirectory,
+  lib,
   pkgs,
   system,
   username,
@@ -20,7 +21,22 @@
     shell = pkgs.zsh;
   };
 
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    # Home Manager and Oh My Zsh own interactive completion and the prompt.
+    # Avoid running compinit, bashcompinit, and promptinit a second time from
+    # nix-darwin's global /etc/zshrc before the user configuration is loaded.
+    enableGlobalCompInit = false;
+    enableBashCompletion = false;
+    promptInit = "";
+    interactiveShellInit = lib.mkAfter ''
+      # Homebrew's shellenv exports FPATH, but fpath contains mutable,
+      # shell-local completion state after Oh My Zsh starts. Do not pass that
+      # state to nested shells; each Zsh reconstructs fpath from NIX_PROFILES
+      # and Homebrew before loading its own completion system.
+      typeset +x FPATH
+    '';
+  };
 
   system.keyboard = {
     enableKeyMapping = true;
