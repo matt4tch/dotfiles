@@ -1,6 +1,15 @@
-{ homeDirectory, ... }:
+{
+  homeDirectory,
+  pkgs,
+  username,
+  ...
+}:
 
 {
+  home-manager.users.${username}.home.packages = [
+    pkgs.huggingface-hub
+  ];
+
   # This address is assigned to this work laptop. Other machines use #macos.
   networking.wg-quick.interfaces.wg0 = {
     autostart = true;

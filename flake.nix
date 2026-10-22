@@ -34,20 +34,25 @@
       host = import ./nix/local-context.nix;
       inherit (host) homeDirectory system username;
 
-      # Packages pulled from `nixpkgs-fresh` rather than the main pin. Both of
-      # these release far more often than the rest of the closure. Add a name
+      # Packages pulled from `nixpkgs-fresh` rather than the main pin. These
+      # release far more often than the rest of the closure. Add a name
       # here to track a package's newer version without moving anything else;
       # remove it once the main pin has caught up.
-      freshOverlay = final: prev: {
-        inherit
-          (import nixpkgs-fresh {
+      freshOverlay = final: prev:
+        let
+          freshPkgs = import nixpkgs-fresh {
             inherit (prev.stdenv.hostPlatform) system;
             inherit (prev) config;
-          })
-          claude-code
-          codex
-          ;
-      };
+          };
+        in
+        {
+          inherit
+            (freshPkgs)
+            claude-code
+            codex
+            ;
+          huggingface-hub = freshPkgs.python3Packages.huggingface-hub;
+        };
 
       nixpkgsArgs = {
         config.allowUnfree = true;
