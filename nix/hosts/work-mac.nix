@@ -6,6 +6,8 @@
 }:
 
 {
+  homebrew.casks = [ "wblock" ];
+
   home-manager.users.${username}.home.packages = [
     pkgs.huggingface-hub
   ];
