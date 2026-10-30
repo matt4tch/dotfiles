@@ -10,6 +10,7 @@
 
   home-manager.users.${username}.home.packages = [
     pkgs.huggingface-hub
+    pkgs.ollama
   ];
 
   # This address is assigned to this work laptop. Other machines use #macos.
